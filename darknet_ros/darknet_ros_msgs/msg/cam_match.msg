@@ -1,0 +1,1 @@
+int16 cam_out

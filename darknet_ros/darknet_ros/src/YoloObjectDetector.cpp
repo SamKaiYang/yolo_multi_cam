@@ -674,6 +674,10 @@ void *YoloObjectDetector::publishInThread()
     msg.header.frame_id = "detection";
     msg.count = 0;
     objectPublisher_.publish(msg);
+    
+    boundingBoxesResults_.header.frame_id = "No detection";
+    boundingBoxesResults_.cam_out = cam_number; //cam_out
+    boundingBoxesPublisher_.publish(boundingBoxesResults_);
   }
   if (isCheckingForObjects()) {
     ROS_DEBUG("[YoloObjectDetector] check for objects in image.");

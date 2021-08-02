@@ -46,8 +46,7 @@ class bounding_boxes():
 i = 0
 def Yolo_callback(data):
     global obj_num, ROIarray, cam_out_num
-    # print("cnt:",cnt)
-    # bounding_boxes_callback = True
+
     boxes = bounding_boxes(0,0,0,0,0,0,0)
     #global probability,xmin,ymin,xmax,ymax,id_name,Class_name
     cam_out_num = data.cam_out
@@ -83,55 +82,7 @@ def Yolo_callback(data):
             
         # print("ROI_array:",ROIarray)
         # pub.publish(ROIarray)
-        # rospy.loginfo(rospy.get_caller_id() + "obj_num %d",obj_num)
-# def YoloCount_callback(data):
-#     global data_count
-#     data_count = data.count
 
-# def Image1_callback(data):
-#     global image1, cnt, strategy_detect_flag
-#     if cnt == 0:
-#         image1 = data 
-#         pub_image.publish(image1)
-#         cam_num = cam_output()
-#         cam_num = 0
-#         pub_cam_num.publish(cam_num)
-            
-
-# def Image2_callback(data):
-#     global image2, cnt, strategy_detect_flag
-#     if cnt == 1:
-#         image2 = data 
-#         pub_image.publish(image2)
-#         cam_num = cam_output()
-#         cam_num = 1
-#         pub_cam_num.publish(cam_num)
-        
-# def strategy():
-#     global cnt, data_count, ROIarray, strategy_detect_flag
-   
-#     if cnt == 0:
-#         # cam_num = cam_output()
-#         # cam_num = 0
-#         # pub_cam_num.publish(cam_num)
-#         rospy.loginfo(rospy.get_caller_id() + "image1")
-#         if data_count > 0:
-#             rospy.loginfo(rospy.get_caller_id() + "data_count %d",data_count)
-#             pub.publish(ROIarray)
-#             ROIarray = None
-        
-#         cnt = 1
-#     elif cnt == 1:
-#         # cam_num = cam_output()
-#         # cam_num = 1
-#         # pub_cam_num.publish(cam_num)
-#         rospy.loginfo(rospy.get_caller_id() + "image2")
-#         if data_count > 0:
-#             rospy.loginfo(rospy.get_caller_id() + "data_count %d",data_count)
-#             pub.publish(ROIarray)
-#             ROIarray = None
-        
-#         cnt = 0
             
 def YoloCount_callback(data):
     global data_count

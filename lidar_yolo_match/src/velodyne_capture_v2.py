@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 import socket
 import math
 import time

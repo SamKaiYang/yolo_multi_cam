@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 import cv2
  
 # Camera 0 is the integrated web cam on my netbook

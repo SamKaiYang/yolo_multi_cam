@@ -84,7 +84,7 @@ class Rectangle:
             return False
 
 #extends rectangle
-class Car(Rectangle):
+class Human(Rectangle):
     def __init__(self, center_x, center_y, width, length, angle):
         self.cx = center_x
         self.cy = center_y
@@ -114,7 +114,7 @@ class Car(Rectangle):
         self.x_ = self.x_ + self.K.dot(self.y)
         self.P_ = (np.eye(len(self.P_))-self.K).dot(self.P_)
         self.results = np.append(self.results, [self.x_[0:2]], axis = 0)    
-    #adjusts cx_future and cy_future as where the center of car will be after delta_t time
+    #adjusts cx_future and cy_future as where the center of human will be after delta_t time
     def update_speed(self):
         #data = soc.recv(554)
         #data_string = data[206:270].decode('utf-8')
@@ -133,7 +133,7 @@ class Car(Rectangle):
         self.cy_future = self.cy+changeiny
         self.cx_future = self.cx+changeinx
         return hyp
-    #adjusts cx_future and cy_future as where the center of the car's path will be after delta_t time
+    #adjusts cx_future and cy_future as where the center of the human's path will be after delta_t time
     def update_for_path(self):
         hyp = self.speed*delta_t
         changeiny = (hyp/2)*math.sin(math.radians(90.0-(-1.0*self.angle)))
@@ -198,7 +198,7 @@ class Car(Rectangle):
 
 
 #random initial stuff
-car_dim = {
+human_dim = {
         "length": 12.0,
         "width": 2.0
         }
@@ -214,9 +214,9 @@ fake_obj = {
         }
 
 
-#returns true if car and obj intersect
-def collision_detection(car, obj):
-    return car.collision_future(obj)
+#returns true if human and obj intersect
+def collision_detection(human, obj):
+    return human.collision_future(obj)
 
 def alert_linx():
     duration = 1  # second
@@ -249,9 +249,9 @@ def alert():
 # plt.show()
 
 
-# my_car = Car(0,0,car_dim["width"],car_dim["length"],0)
-# other_car = Car(0,0,fake_obj["width"],fake_obj["length"],0)
-# other_car.update_locarray(locarray)
+# my_human = Human(0,0,human_dim["width"],human_dim["length"],0)
+# other_human = Human(0,0,fake_obj["width"],fake_obj["length"],0)
+# other_human.update_locarray(locarray)
 
 
 # fig = plt.figure(1, figsize=(15, 8))
@@ -260,16 +260,16 @@ def alert():
 # ax.set_ylim(-40, 40)  
 
 
-# my_car.update_speed()
-# other_car.update_object()
+# my_human.update_speed()
+# other_human.update_object()
 
-# ax.add_patch(PolygonPatch(my_car.get_contour(), fc='#990000', alpha=1))
-# ax.add_patch(PolygonPatch(my_car.get_path(), fc='#990000', alpha=.5))
-# ax.add_patch(PolygonPatch(other_car.get_contour(), fc='#000099', alpha=1))
-# ax.add_patch(PolygonPatch(other_car.get_path(), fc='#000099', alpha=.5))
+# ax.add_patch(PolygonPatch(my_human.get_contour(), fc='#990000', alpha=1))
+# ax.add_patch(PolygonPatch(my_human.get_path(), fc='#990000', alpha=.5))
+# ax.add_patch(PolygonPatch(other_human.get_contour(), fc='#000099', alpha=1))
+# ax.add_patch(PolygonPatch(other_human.get_path(), fc='#000099', alpha=.5))
 
 
-# if(collision_detection(my_car,other_car)):
+# if(collision_detection(my_human,other_human)):
 #     alert()
 
                                      

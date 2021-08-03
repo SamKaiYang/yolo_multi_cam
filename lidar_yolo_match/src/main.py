@@ -1,5 +1,7 @@
 #!/usr/bin/env python2
-
+import sys
+import rospy
+import os
 import numpy as np
 import math 
 import pandas as pd
@@ -14,8 +16,10 @@ import datetime
 from velodyne_capture_v3 import init_velo_socket, get_pointcloud
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.patches import Circle
-from collisionNew import Car, collision_detection
-
+from collisionNew import Human, collision_detection
+###
+from yolo_detection.msg import ROI_array
+from yolo_detection.msg import ROI
 '''
 code to get lidar point cloud, get bounding boxes for that frame, 
 and predict a collision using Kalman filter (in progress)
@@ -23,8 +27,8 @@ and predict a collision using Kalman filter (in progress)
 '''
 
 # Initialization info
-car_dim = {
-        "length": 4.5,
+human_dim = {
+        "length": 0.5,
         "width": 2.1
         }
 
@@ -71,115 +75,136 @@ prev_x = 0
 prev_y = 0
 prev_t = 0
 
-# Initialize car objects: 
-# Car location and dimensions (CHANGE)
-my_car = Car(0,0,car_dim["width"],car_dim["length"],0)
+# Initialize human objects: 
+# human location and dimensions (CHANGE)
+my_human = Human(0,0,human_dim["width"],human_dim["length"],0)
 # Detected object (CHANGE)
-other_car = Car(0,0,fake_obj["width"],fake_obj["length"],0)
+other_human = Human(0,0,fake_obj["width"],fake_obj["length"],0)
 
 # Get x, y, z, and distance data from point cloud
-while 1:
-	start = datetime.datetime.now()
-	pcl = get_pointcloud(soc)
-	elapsed = (datetime.datetime.now() - start).microseconds
-	# print('pcl time: ', elapsed)
-	X= pcl[:,0]
-	Y= pcl[:,1]
-	Z= pcl[:,2]
-	distance = pcl[:,3]
 
-	# # GET BOUNDING BOX DATA HERE:
-	# #while 1:
-	# start = datetime.datetime.now()
-	# timestamp, numObjects, objects = get_bounding_boxes(s)
-	# print(timestamp, numObjects, objects)
-	# start = datetime.datetime.now()
+xcenter = 0
+ycenter = 0
+numObjects = 0
+def ROI_array_callback(data):
+	# TODO:fix data input //input data is array
+	xcenter = data.x
+	ycenter = data.y
+	numObjects = len(data)
 
-	# make A matrix (x y z)
-	size= len(X)
-	X1= np.matrix.transpose(X)
-	Y1= np.matrix.transpose(Y)
-	Z1= np.matrix.transpose(Z)
-	A= np.matrix([X1, Y1 ,Z1])
-	print(A.shape)
-	T2= np.repeat(T1,size,axis=0)
-	T2= np.matrix.transpose(T2)
+if __name__ == '__main__':
+    #global boxes
+	argv = rospy.myargv()
+	rospy.init_node('lidar_yolo_match', anonymous=True)
+	rate = rospy.Rate(10) # 10hz
+	rospy.Subscriber("obj_position",ROI_array,ROI_array_callback)
+ 
+    # pub = rospy.Publisher("obj_position", ROI_array, queue_size=10)
+	while not rospy.is_shutdown():
+		start = datetime.datetime.now()
+		pcl = get_pointcloud(soc)
+		elapsed = (datetime.datetime.now() - start).microseconds
+		# print('pcl time: ', elapsed)
+		X= pcl[:,0]
+		Y= pcl[:,1]
+		Z= pcl[:,2]
+		distance = pcl[:,3]
 
-	# Multiply matrices (lidar points in pixel coordinates)
-	c2 = np.matmul((F), (R))
-	c2 = .25*np.matmul((c2),(A+T2))
+		# # GET BOUNDING BOX DATA HERE:
+		# #while 1:
+		# start = datetime.datetime.now()
+		# timestamp, numObjects, objects = get_bounding_boxes(s)
+		# print(timestamp, numObjects, objects)
+		# start = datetime.datetime.now()
+
+		# make A matrix (x y z)
+		size= len(X)
+		X1= np.matrix.transpose(X)
+		Y1= np.matrix.transpose(Y)
+		Z1= np.matrix.transpose(Z)
+		A= np.matrix([X1, Y1 ,Z1])
+		print(A.shape)
+		T2= np.repeat(T1,size,axis=0)
+		T2= np.matrix.transpose(T2)
+
+		# Multiply matrices (lidar points in pixel coordinates)
+		c2 = np.matmul((F), (R))
+		c2 = .25*np.matmul((c2),(A+T2))
 
 
 
-	#print("matrix calculations: ", (datetime.datetime.now()-start).microseconds)
-	#print('objects', numObjects)
-	#print(datetime.datetime.now())
+		#print("matrix calculations: ", (datetime.datetime.now()-start).microseconds)
+		#print('objects', numObjects)
+		#print(datetime.datetime.now())
 
-	# for i in range(numObjects):
-	# 	left = objects[i][0]
-	# 	right =  objects[i][1]
-	# 	top = objects[i][2]
-	# 	bottom =  objects[i][3]
+		for i in range(numObjects):
+			# left = objects[i][0]
+			# right =  objects[i][1]
+			# top = objects[i][2]
+			# bottom =  objects[i][3]
 
-	# 	# Center of box
-	# 	xcenter = (left+right)/2.0
-	# 	ycenter = (top+bottom)/2.0
+			# # Center of box
+			# xcenter = (left+right)/2.0
+			# ycenter = (top+bottom)/2.0
 
-	# 	# c3 = c2
-	# 	# Bounding box
-	# 	start = datetime.datetime.now()
+			# c3 = c2
+			# Bounding box
+			start = datetime.datetime.now()
 
-	# 	B = np.square((c2[0,:]-xcenter))+ np.square((c2[1,:]-ycenter))
+			B = np.square((c2[0,:]-xcenter))+ np.square((c2[1,:]-ycenter))
 
-	# 	# Get lidar points in bounding box
-	# 	#points = []
+			# Get lidar points in bounding box
+			#points = []
 
-	# 	#points = [[X[i], Y[i], distance[i]] for i in range(c2_T.shape[0]) if (c2_T[i,0] > left and c2_T[i,0] < right and c2_T[i,1] > top and c2_T[i,1] < bottom)]
-	# 	# for i in range(c2_T.shape[0]):
-	# 	# 	if c2_T[i,0] > left and c2_T[i,0] < right and c2_T[i,1] > top and c2_T[i,1] < bottom:
-	# 	# 		points.append([X[i], Y[i], distance[i]])
-	# 	# elapsed = (datetime.datetime.now() - start).microseconds
-	# 	# print(elapsed/1000)
-	# 	# print(len(points)) 
+			#points = [[X[i], Y[i], distance[i]] for i in range(c2_T.shape[0]) if (c2_T[i,0] > left and c2_T[i,0] < right and c2_T[i,1] > top and c2_T[i,1] < bottom)]
+			# for i in range(c2_T.shape[0]):
+			# 	if c2_T[i,0] > left and c2_T[i,0] < right and c2_T[i,1] > top and c2_T[i,1] < bottom:
+			# 		points.append([X[i], Y[i], distance[i]])
+			# elapsed = (datetime.datetime.now() - start).microseconds
+			# print(elapsed/1000)
+			# print(len(points)) 
 
-	# 	# Get index of lidar point for detected object
-	# 	index0 = int(np.argmin(B, axis=1))
-		
+			# Get index of lidar point for detected object
+			index0 = int(np.argmin(B, axis=1))
+			
 
-	# 	#print('y', Y[index0])
-	# 	#print("Index of center point is:", index0)
+			#print('y', Y[index0])
+			#print("Index of center point is:", index0)
 
-	# 	# printing x,y, and distance for detected objects
-	# 	print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]));
+			# printing x,y, and distance for detected objects
+			print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]));
 
-	# 	# Get inputs ready for prediction: [x,y,vx,vy,dt]
-	# 	x = X[index0]
-	# 	y = Y[index0]
-	# 	t = time.time()
+			# Get inputs ready for prediction: [x,y,vx,vy,dt]
+			x = X[index0]
+			y = Y[index0]
+			t = time.time()
 
-	# 	# Account for first instance:
-	# 	if (prev_t == 0):
-	# 		dt = 1
-	# 		vx = 0
-	# 		vy = 0
-	# 	# Else, update:
-	# 	else:	
-	# 		dt = t - prev_t
-	# 		vx = (x - prev_x)/(t_in - prev_t)
-	# 		vy = (y_- prev_x)/(t)
-	# 		prev_x = x
-	# 		prev_y = y
-	# 		prev_t = t
+			# Account for first instance:
+			if (prev_t == 0):
+				dt = 1
+				vx = 0
+				vy = 0
+			# Else, update:
+			else:	
+				dt = t - prev_t
+				vx = (x - prev_x)/(t_in - prev_t)
+				vy = (y_- prev_x)/(t)
+				prev_x = x
+				prev_y = y
+				prev_t = t
 
-	# 	# Code from collisionNew.py:
-	# 	other_car.update_locarray([x, y, vx, vy, dt])
-	# 	#print('distance: {:.2f}'.format(distance[index0]))  
+			# Code from collisionNew.py:
+			other_human.update_locarray([x, y, vx, vy, dt])
+			#print('distance: {:.2f}'.format(distance[index0]))  
 
-	# 	my_car.update_speed()
-	# 	other_car.update_object()
+			my_human.update_speed()
+			other_human.update_object()
 
-	# 	if(collision_detection(my_car,other_car)):
-	# 		print('ALERT!!!')
-	# 	    # alert()
-		                                
-	print(' ')
+			if(collision_detection(my_human,other_human)):
+				print('ALERT!!!')
+				# alert()
+											
+		print(' ')
+
+        rate.sleep()
+	rospy.spin()

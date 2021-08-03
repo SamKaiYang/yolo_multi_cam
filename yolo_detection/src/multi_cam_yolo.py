@@ -59,28 +59,29 @@ def Yolo_callback(data):
         #i = obj_num-1
         List = []
         for i in range(len(data.bounding_boxes)):
-            boxes.probability = data.bounding_boxes[i].probability
-            boxes.xmin = data.bounding_boxes[i].xmin
-            boxes.ymin = data.bounding_boxes[i].ymin
-            boxes.xmax = data.bounding_boxes[i].xmax
-            boxes.ymax = data.bounding_boxes[i].ymax
-            boxes.id_name = data.bounding_boxes[i].id
-            boxes.Class_name = data.bounding_boxes[i].Class
-            
-            center_x  = (boxes.xmax+boxes.xmin)/2
-            center_y  = (boxes.ymax+boxes.ymin)/2
+            if data.bounding_boxes[i].Class == "person":
+                boxes.probability = data.bounding_boxes[i].probability
+                boxes.xmin = data.bounding_boxes[i].xmin
+                boxes.ymin = data.bounding_boxes[i].ymin
+                boxes.xmax = data.bounding_boxes[i].xmax
+                boxes.ymax = data.bounding_boxes[i].ymax
+                boxes.id_name = data.bounding_boxes[i].id
+                boxes.Class_name = data.bounding_boxes[i].Class
+                
+                center_x  = (boxes.xmax+boxes.xmin)/2
+                center_y  = (boxes.ymax+boxes.ymin)/2
 
-            ROI_data = ROI()
-            ROI_data.probability = boxes.probability
-            ROI_data.object_name= boxes.Class_name
-            ROI_data.id = boxes.id_name
-            ROI_data.x = center_x
-            ROI_data.y = center_y
-            ROIarray = ROI_array()
-            List.append(ROI_data)
-            ROIarray.ROI_list = List
+                ROI_data = ROI()
+                ROI_data.probability = boxes.probability
+                ROI_data.object_name= boxes.Class_name
+                ROI_data.id = boxes.id_name
+                ROI_data.x = center_x
+                ROI_data.y = center_y
+                ROIarray = ROI_array()
+                List.append(ROI_data)
+                ROIarray.ROI_list = List
             
-        # print("ROI_array:",ROIarray)
+        print("ROI_array:",ROIarray)
         # pub.publish(ROIarray)
 
             
@@ -99,12 +100,12 @@ def Image1_callback(data):
         cam_num = 0
         pub_cam_num.publish(cam_num)
 
-        rospy.loginfo(rospy.get_caller_id() + "image1")
+        # rospy.loginfo(rospy.get_caller_id() + "image1")
       
         
         if cam_out_num == 0:
             if data_count > 0:
-                rospy.loginfo(rospy.get_caller_id() + "data_count %d",data_count)
+                # rospy.loginfo(rospy.get_caller_id() + "data_count %d",data_count)
                 pub.publish(ROIarray)
                 ROIarray = None
             cnt = 1
@@ -120,51 +121,51 @@ def Image2_callback(data):
         cam_num = 1
         pub_cam_num.publish(cam_num)
 
-        rospy.loginfo(rospy.get_caller_id() + "image2")
+        # rospy.loginfo(rospy.get_caller_id() + "image2")
        
         if cam_out_num == 1:
             if data_count > 0:
-                rospy.loginfo(rospy.get_caller_id() + "cam_out_num %d",cam_out_num)
-                rospy.loginfo(rospy.get_caller_id() + "data_count %d",data_count)
+                # rospy.loginfo(rospy.get_caller_id() + "cam_out_num %d",cam_out_num)
+                # rospy.loginfo(rospy.get_caller_id() + "data_count %d",data_count)
                 pub.publish(ROIarray)
                 ROIarray = None
             cnt = 0
         
-def strategy():
-    global cnt, image1, image2, data_count, ROIarray, cam_out_num
+# def strategy():
+#     global cnt, image1, image2, data_count, ROIarray, cam_out_num
     
-    # cam 0
-    if cnt == 0:
-        pub_image.publish(image1)
+#     # cam 0
+#     if cnt == 0:
+#         pub_image.publish(image1)
 
-        cam_num = cam_output()
-        cam_num = 0
-        pub_cam_num.publish(cam_num)
+#         cam_num = cam_output()
+#         cam_num = 0
+#         pub_cam_num.publish(cam_num)
 
-        rospy.loginfo(rospy.get_caller_id() + "image1")
-        if data_count > 0:
-            rospy.loginfo(rospy.get_caller_id() + "cam_out_num %d",cam_out_num)
-            rospy.loginfo(rospy.get_caller_id() + "data_count %d",data_count)
-            pub.publish(ROIarray)
-            ROIarray = None
+#         rospy.loginfo(rospy.get_caller_id() + "image1")
+#         if data_count > 0:
+#             rospy.loginfo(rospy.get_caller_id() + "cam_out_num %d",cam_out_num)
+#             rospy.loginfo(rospy.get_caller_id() + "data_count %d",data_count)
+#             pub.publish(ROIarray)
+#             ROIarray = None
         
-        if cam_out_num == 0:
-            cnt = 1
-    # cam 1
-    elif cnt == 1:
-        pub_image.publish(image2)
+#         if cam_out_num == 0:
+#             cnt = 1
+#     # cam 1
+#     elif cnt == 1:
+#         pub_image.publish(image2)
 
-        cam_num = cam_output()
-        cam_num = 0
-        pub_cam_num.publish(cam_num)
+#         cam_num = cam_output()
+#         cam_num = 0
+#         pub_cam_num.publish(cam_num)
 
-        rospy.loginfo(rospy.get_caller_id() + "image2")
-        if data_count > 0:
-            rospy.loginfo(rospy.get_caller_id() + "data_count %d",data_count)
-            pub.publish(ROIarray)
-            ROIarray = None
-        if cam_out_num == 1:
-            cnt = 0
+#         rospy.loginfo(rospy.get_caller_id() + "image2")
+#         if data_count > 0:
+#             rospy.loginfo(rospy.get_caller_id() + "data_count %d",data_count)
+#             pub.publish(ROIarray)
+#             ROIarray = None
+#         if cam_out_num == 1:
+#             cnt = 0
 
 if __name__ == '__main__':
     #global boxes

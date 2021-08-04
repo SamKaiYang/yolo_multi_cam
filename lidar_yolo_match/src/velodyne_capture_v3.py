@@ -47,7 +47,8 @@ def get_pointcloud(soc):
     while True:
         # get data from port
         data = soc.recv(1248)
-        count += 1
+        # TODO:find lidar scan angle
+        count += 1 ########??? angle 90?
         if count == 90:
             count = 0
             break

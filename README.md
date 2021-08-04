@@ -62,6 +62,6 @@ rosrun yolo_detection multi_cam_yolo.py
 ```
 roslaunch usb_cam usb_cam-test_multi.launch
 roslaunch lidar_yolo_match multi_cam_yolo_lidar.launch
-rosrun lidar_yolo_match main.py 
+
 
 ```

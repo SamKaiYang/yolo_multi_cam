@@ -179,7 +179,7 @@ if __name__ == '__main__':
     rospy.Subscriber("/camera2/usb_cam2/image_raw",Image,Image2_callback)
     # rospy.Subscriber("/camera3/usb_cam3/image_raw",Image,Image3_callback)
  
-    pub = rospy.Publisher("obj_position", ROI_array, queue_size=10)
+    pub = rospy.Publisher("/obj_position", ROI_array, queue_size=10)
 
     pub_cam_num  =  rospy.Publisher("/cam_num", cam_output, queue_size=10)
     pub_image = rospy.Publisher("/usb_cam/image_raw", Image, queue_size=10)

@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from skimage.io import imread
 from utils_data import *
 from utils_data import CalibFields
-import tkinter as tk
+import Tkinter as tk
 import functools
 import pandas as pd
 

@@ -66,7 +66,7 @@ def get_pointcloud(soc):
                 prev_azimuth = azimuth
                 ## important 0805 # TODO:Azimuth Angle Specify the projection angle range
                 if prev_azimuth > 34500 or  prev_azimuth < 1500: # Azimuth Angle Specify the projection angle range
-                    print(prev_azimuth)
+                    # print(prev_azimuth)
                     # H-distance (2mm step), B-reflectivity (0
                     arr = struct.unpack_from('<' + "HB" * 16, data, offset + 4 + step * 48)
                     for i in xrange(NUM_LASERS):

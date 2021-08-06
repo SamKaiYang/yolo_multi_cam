@@ -130,42 +130,7 @@ def Image2_callback(data):
                 pub.publish(ROIarray)
                 ROIarray = None
             cnt = 0
-        
-# def strategy():
-#     global cnt, image1, image2, data_count, ROIarray, cam_out_num
-    
-#     # cam 0
-#     if cnt == 0:
-#         pub_image.publish(image1)
 
-#         cam_num = cam_output()
-#         cam_num = 0
-#         pub_cam_num.publish(cam_num)
-
-#         rospy.loginfo(rospy.get_caller_id() + "image1")
-#         if data_count > 0:
-#             rospy.loginfo(rospy.get_caller_id() + "cam_out_num %d",cam_out_num)
-#             rospy.loginfo(rospy.get_caller_id() + "data_count %d",data_count)
-#             pub.publish(ROIarray)
-#             ROIarray = None
-        
-#         if cam_out_num == 0:
-#             cnt = 1
-#     # cam 1
-#     elif cnt == 1:
-#         pub_image.publish(image2)
-
-#         cam_num = cam_output()
-#         cam_num = 0
-#         pub_cam_num.publish(cam_num)
-
-#         rospy.loginfo(rospy.get_caller_id() + "image2")
-#         if data_count > 0:
-#             rospy.loginfo(rospy.get_caller_id() + "data_count %d",data_count)
-#             pub.publish(ROIarray)
-#             ROIarray = None
-#         if cam_out_num == 1:
-#             cnt = 0
 
 if __name__ == '__main__':
     #global boxes

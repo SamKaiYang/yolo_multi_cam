@@ -40,5 +40,5 @@
 
   <!-- <node name="yolo_boundingboxes" pkg="yolo_detection" type="multi_cam_yolo.py"  output="screen" />   -->
   <!--output="screen"-->
-  <node name="lidar_yolo_match" pkg="lidar_yolo_match" type="main.py"  output="screen" /> 
+  <node name="lidar_yolo_match" pkg="lidar_yolo_match" type="main_class.py"  output="screen" /> 
 </launch>

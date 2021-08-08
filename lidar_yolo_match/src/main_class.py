@@ -10,20 +10,19 @@ import datetime
 import scipy
 import time
 import socket
-import datetime
 '''
 code to get lidar point cloud, get bounding boxes for that frame, 
 and predict a collision using Kalman filter (in progress)
 '''
-# from client import init_yolo_socket, get_bounding_boxes
 from velodyne_capture_v3 import init_velo_socket, get_pointcloud, get_cam_pointcloud
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.patches import Circle
 from collisionNew import Human, collision_detection
-###
+# yolo_detection
 from yolo_detection.msg import ROI_array
 from yolo_detection.msg import ROI
 from yolo_detection.msg import cam_output
+from yolo_detection.msg import depth_alert
 
 from darknet_ros_msgs.msg import BoundingBox
 from darknet_ros_msgs.msg import BoundingBoxes
@@ -32,20 +31,9 @@ from darknet_ros_msgs.msg import ObjectCount
 from std_msgs.msg import String
 from std_msgs.msg import Int32MultiArray
 
-
 from sensor_msgs.msg import Image 
-# from lidar_yolo_match.msg import Image 
-
-class bounding_boxes():
-	def __init__(self):
-		self.probability = None
-		self.xmin = None
-		self.ymin = None
-		self.xmax = None
-		self.ymax = None
-		self.id_name = None
-		self.Class_name = None
-		self.cam = None
+# Sub-execution work function
+import threading
 
 class cal_class:
 	def __init__(self):
@@ -73,7 +61,7 @@ class cal_class:
 		self.sub_Image3 = rospy.Subscriber("/camera3/usb_cam3/image_raw",Image,self.Image3_callback)
 		self.pub_cam_num  =  rospy.Publisher("/cam_num", cam_output, queue_size=10)
 		self.pub_image = rospy.Publisher("/usb_cam/image_raw", Image, queue_size=None)
-
+		
 	def vlp16_socket(self):
 		# Set up sockets:
 		HOST = "192.168.1.201"
@@ -193,20 +181,76 @@ class cal_class:
 				B = np.square((c2[0,:]-xcenter))+ np.square((c2[1,:]-ycenter))
 				# Get index of lidar point for detected object
 				index0 = int(np.argmin(B, axis=1))
+				# TODO: Distance conversion and testing
 				print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
-
+				Alert.person_distance = distance[index0]
 			self.bounding = None							
 			print(' ')
+
+class Alert(threading.Thread):
+	def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
+		# Call the Thread class's init function
+		super(Alert, self).__init__(group=group, target=self.thread_time_cal,
+                               name=name, args=args, kwargs=kwargs,
+                               verbose=verbose)
+		self.args = args
+		self.person_distance = None
+		self.alert_flag = None
+
+		self.pub_alert = rospy.Publisher("alert_level", depth_alert, queue_size=10)
+		self.Depth_level = depth_alert()
+	# def run(self):
+	# 	while(1):
+	# 		print('test --- ')
+	# 		time.sleep(2)
+	def alert_level_cal(slef):
+		print("Distance: %d mm"%self.person_distance)
+		if self.person_distance < 1000 and self.alert_flag == False:
+			self.Depth_level = 1
+		elif self.person_distance < 1000 and self.alert_flag == True:
+			self.Depth_level = 2
+		else :
+			self.Depth_level = 0
+
+		self.pub_alert.publish(Depth_level)
+
+	def thread_time_cal(self):
+		count = 0
+		while True: 
+			try:
+				if self.person_distance < 1000 and count < 3:
+					count += 1
+					self.alert_flag = False
+					time.sleep(1)
+				elif self.person_distance < 1000 and count == 3:
+					self.alert_flag = True
+				elif self.person_distance >= 1000:
+					count = 0
+					self.alert_flag = False
+				# test !!
+				# print('thread_time_cal')
+				# time.sleep(2)
+			except:
+				print("Other abnormalities in the program")
+
 if __name__ == '__main__':
-    #global boxes
 	argv = rospy.myargv()
 	rospy.init_node('lidar_yolo_match', anonymous=True)
 	rate = rospy.Rate(10) # 10hz
+
+	alert = Alert()
+	alert.daemon = True
+	alert.start()
+
 	cal = cal_class()
 	cal.vlp16_socket()
 	cal.matrix()
 	cal.Transpose()
-	while not rospy.is_shutdown():
-		cal.task()
-		rate.sleep()
+	try:
+		while not rospy.is_shutdown():
+			cal.task()
+			rate.sleep()
+	except KeyboardInterrupt:
+		alert.join()
+	
 	rospy.spin()

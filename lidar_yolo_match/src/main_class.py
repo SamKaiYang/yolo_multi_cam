@@ -32,7 +32,9 @@ from darknet_ros_msgs.msg import ObjectCount
 from std_msgs.msg import String
 from std_msgs.msg import Int32MultiArray
 
+
 from sensor_msgs.msg import Image 
+# from lidar_yolo_match.msg import Image 
 
 class bounding_boxes():
 	def __init__(self):
@@ -61,6 +63,7 @@ class cal_class:
 		self.data_count = 0
 		self.cam_num = None
 		self.bounding = None
+		self.bounding_num = None
 		# self.sub = rospy.Subscriber("chatter",String,self.callback)
 		self.sub_bouding = rospy.Subscriber("/darknet_ros/bounding_boxes",BoundingBoxes,self.Yolo_callback)
 		self.sub_YOLOCount = rospy.Subscriber("/darknet_ros/found_object",ObjectCount,self.YoloCount_callback)
@@ -112,8 +115,8 @@ class cal_class:
 			if self.cam_out_num == 0:
 				self.cam_change_flag = self.cam_boundingboxes(self.cam_out_num, self.boundingboxes)
 				self.image_cnt = 1
-			else:
-				self.cam_change_flag = False
+			# else:
+			# 	self.cam_change_flag = False
 
 	
 
@@ -126,13 +129,16 @@ class cal_class:
 			if self.cam_out_num == 1:
 				self.cam_change_flag = self.cam_boundingboxes(self.cam_out_num, self.boundingboxes)
 				self.image_cnt = 0
-			else:
-				self.cam_change_flag = False
+			# else:
+			# 	self.cam_change_flag = False
 				
 	def cam_boundingboxes(self, cam, bounding_boxes):
 		if self.boundingboxes > 0:
-			self.cam_num = self.cam_out_num
-			self.bounding = self.boundingboxes
+			for i in range(len(self.boundingboxes)):
+				if self.boundingboxes[i].Class == "person":
+					self.cam_num = self.cam_out_num
+					self.bounding = self.boundingboxes
+					self.bounding_num = i
 			return True
 		else:
 			self.bounding = None
@@ -141,12 +147,21 @@ class cal_class:
 	def task(self):
 		if self.cam_change_flag == True:
 			self.cam_change_flag = False
-			cam_num = self.cam_num
-			bounding = self.bounding 
-			if bounding == None:
+			if self.bounding == None:
 				pass
 			else:
-				pcl = get_cam_pointcloud(self.soc,cam_num)
+				# for i in range(len(self.bounding)):
+				# 	if self.bounding[i].Class == "person":
+				print("cam_out_num",self.cam_num)
+				xmin = self.bounding[self.bounding_num].xmin
+				ymin = self.bounding[self.bounding_num].ymin
+				xmax = self.bounding[self.bounding_num].xmax
+				ymax = self.bounding[self.bounding_num].ymax
+				# # Center of box
+				xcenter = (xmin+xmax)/2.0
+				ycenter = (ymin+ymax)/2.0
+
+				pcl = get_cam_pointcloud(self.soc,self.cam_num)
 				X= pcl[:,0]
 				Y= pcl[:,1]
 				Z= pcl[:,2]
@@ -162,20 +177,10 @@ class cal_class:
 				# Multiply matrices (lidar points in pixel coordinates)
 				c2 = np.matmul((self.F), (self.R))
 				c2 = .25*np.matmul((c2),(A+T2))	
-				for i in range(len(bounding)):
-					if bounding[i].Class == "person":
-						print("cam_out_num",cam_num)
-						xmin = bounding[i].xmin
-						ymin = bounding[i].ymin
-						xmax = bounding[i].xmax
-						ymax = bounding[i].ymax
-						# # Center of box
-						xcenter = (xmin+xmax)/2.0
-						ycenter = (ymin+ymax)/2.0
-						B = np.square((c2[0,:]-xcenter))+ np.square((c2[1,:]-ycenter))
-						# Get index of lidar point for detected object
-						index0 = int(np.argmin(B, axis=1))
-						print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
+				B = np.square((c2[0,:]-xcenter))+ np.square((c2[1,:]-ycenter))
+				# Get index of lidar point for detected object
+				index0 = int(np.argmin(B, axis=1))
+				print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
 
 			self.bounding = None							
 			print(' ')

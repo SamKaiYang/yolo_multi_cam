@@ -54,6 +54,7 @@ class cal_class:
 		self.cam_out_num = 0
 		self.image1 = None
 		self.image2 = None
+		self.image3 = None
 		self.image_cnt = 0
 		self.soc = None
 		self.T1 = None
@@ -69,6 +70,7 @@ class cal_class:
 		self.sub_YOLOCount = rospy.Subscriber("/darknet_ros/found_object",ObjectCount,self.YoloCount_callback)
 		self.sub_Image1 = rospy.Subscriber("/camera1/usb_cam1/image_raw",Image,self.Image1_callback)
 		self.sub_Image2 = rospy.Subscriber("/camera2/usb_cam2/image_raw",Image,self.Image2_callback)
+		self.sub_Image3 = rospy.Subscriber("/camera3/usb_cam3/image_raw",Image,self.Image3_callback)
 		self.pub_cam_num  =  rospy.Publisher("/cam_num", cam_output, queue_size=10)
 		self.pub_image = rospy.Publisher("/usb_cam/image_raw", Image, queue_size=None)
 
@@ -128,10 +130,21 @@ class cal_class:
 
 			if self.cam_out_num == 1:
 				self.cam_change_flag = self.cam_boundingboxes(self.cam_out_num, self.boundingboxes)
+				self.image_cnt = 2
+			# else:
+			# 	self.cam_change_flag = False
+	def Image3_callback(self, data):
+		self.image3 = data 
+		if self.image_cnt == 2:
+			self.pub_image.publish(self.image3)
+			self.pub_cam_num.publish(2)
+
+			if self.cam_out_num == 2:
+				self.cam_change_flag = self.cam_boundingboxes(self.cam_out_num, self.boundingboxes)
 				self.image_cnt = 0
 			# else:
 			# 	self.cam_change_flag = False
-				
+
 	def cam_boundingboxes(self, cam, bounding_boxes):
 		if self.boundingboxes > 0:
 			for i in range(len(self.boundingboxes)):

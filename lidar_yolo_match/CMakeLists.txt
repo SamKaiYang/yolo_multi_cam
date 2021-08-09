@@ -58,6 +58,7 @@ add_message_files(
 add_service_files(
    FILES
    alert_output.srv
+   TimdaMode.srv
 #   Service2.srv
  )
 

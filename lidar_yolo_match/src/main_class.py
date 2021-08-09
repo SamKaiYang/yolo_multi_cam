@@ -36,6 +36,7 @@ from sensor_msgs.msg import Image
 import threading
 
 from lidar_yolo_match.srv import alert_output, alert_outputResponse
+from lidar_yolo_match.srv import TimdaMode, TimdaModeResponse
 
 class cal_class:
 	def __init__(self, alert_calss):
@@ -198,8 +199,9 @@ class Alert(threading.Thread):
 
 		self.Depth_level = depth_alert()
 		self.pub_alert = rospy.Publisher("alert_level", depth_alert, queue_size=10)
-		self.service_alert = rospy.Service('alert', alert_output, self.handle_alert)
-	
+		# self.service_alert = rospy.Service('alert', alert_output, self.handle_alert)
+		# self.service_alert = rospy.Service('alert', TimdaMode, self.handle_alert) # server
+	# example server
 	def handle_alert(self, req):
 		pass
 		# TODO:add srv to mobile platform and robotic arm 
@@ -210,7 +212,16 @@ class Alert(threading.Thread):
 		# 	resp.y = grasp.y
 		# 	resp.angle = grasp.angle
 		# 	return resp
-
+	# example  client
+	# def kmeans_client(req):
+	# 	rospy.wait_for_service('kmeans')
+	# 	print("stay kmeans input")
+	# 	try:
+	# 		kmeans = rospy.ServiceProxy('kmeans', kmeans_output)
+	# 		kmeans_resp = kmeans(req)
+	# 		return kmeans_resp
+	# 	except rospy.ServiceException as e:
+	# 		print("Service call failed: %s"%e)
 	def alert_level_cal(self):
 		# print("Distance: %d mm"%self.person_distance)
 		if self.person_distance < 1 and self.alert_flag == False:

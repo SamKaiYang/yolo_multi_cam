@@ -1,0 +1,3 @@
+int32 alert_level
+---
+bool response

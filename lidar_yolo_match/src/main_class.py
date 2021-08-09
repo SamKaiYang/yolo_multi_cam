@@ -35,8 +35,10 @@ from sensor_msgs.msg import Image
 # Sub-execution work function
 import threading
 
+from lidar_yolo_match.srv import alert_output, alert_outputResponse
+
 class cal_class:
-	def __init__(self):
+	def __init__(self, alert_calss):
 		self.obj_num = 0
 		self.boundingboxes = None
 		self.cam_out_num = 0
@@ -53,6 +55,7 @@ class cal_class:
 		self.cam_num = None
 		self.bounding = None
 		self.bounding_num = None
+		self.alert_calss = alert_calss
 		# self.sub = rospy.Subscriber("chatter",String,self.callback)
 		self.sub_bouding = rospy.Subscriber("/darknet_ros/bounding_boxes",BoundingBoxes,self.Yolo_callback)
 		self.sub_YOLOCount = rospy.Subscriber("/darknet_ros/found_object",ObjectCount,self.YoloCount_callback)
@@ -68,6 +71,7 @@ class cal_class:
 		PORT = 2368
 		self.soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self.soc.bind(('', PORT))
+
 	def matrix(self):
 		# For matrix values
 		xr = 95 * math.pi/180
@@ -105,10 +109,6 @@ class cal_class:
 			if self.cam_out_num == 0:
 				self.cam_change_flag = self.cam_boundingboxes(self.cam_out_num, self.boundingboxes)
 				self.image_cnt = 1
-			# else:
-			# 	self.cam_change_flag = False
-
-	
 
 	def Image2_callback(self, data):
 		self.image2 = data 
@@ -119,8 +119,7 @@ class cal_class:
 			if self.cam_out_num == 1:
 				self.cam_change_flag = self.cam_boundingboxes(self.cam_out_num, self.boundingboxes)
 				self.image_cnt = 2
-			# else:
-			# 	self.cam_change_flag = False
+
 	def Image3_callback(self, data):
 		self.image3 = data 
 		if self.image_cnt == 2:
@@ -130,8 +129,6 @@ class cal_class:
 			if self.cam_out_num == 2:
 				self.cam_change_flag = self.cam_boundingboxes(self.cam_out_num, self.boundingboxes)
 				self.image_cnt = 0
-			# else:
-			# 	self.cam_change_flag = False
 
 	def cam_boundingboxes(self, cam, bounding_boxes):
 		if self.boundingboxes > 0:
@@ -183,7 +180,9 @@ class cal_class:
 				index0 = int(np.argmin(B, axis=1))
 				# TODO: Distance conversion and testing
 				print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
-				Alert.person_distance = distance[index0]
+				self.alert_calss.person_distance = distance[index0]
+				self.alert_calss.alert_level_cal()
+
 			self.bounding = None							
 			print(' ')
 
@@ -197,34 +196,44 @@ class Alert(threading.Thread):
 		self.person_distance = None
 		self.alert_flag = None
 
-		self.pub_alert = rospy.Publisher("alert_level", depth_alert, queue_size=10)
 		self.Depth_level = depth_alert()
-	# def run(self):
-	# 	while(1):
-	# 		print('test --- ')
-	# 		time.sleep(2)
-	def alert_level_cal(slef):
-		print("Distance: %d mm"%self.person_distance)
-		if self.person_distance < 1000 and self.alert_flag == False:
+		self.pub_alert = rospy.Publisher("alert_level", depth_alert, queue_size=10)
+		self.service_alert = rospy.Service('alert', alert_output, self.handle_alert)
+	
+	def handle_alert(self, req):
+		pass
+		# TODO:add srv to mobile platform and robotic arm 
+		# if req.request == True:
+		# 	resp = kmeans_outputResponse()
+		# 	resp.tool_name = tool_select
+		# 	resp.x = grasp.x
+		# 	resp.y = grasp.y
+		# 	resp.angle = grasp.angle
+		# 	return resp
+
+	def alert_level_cal(self):
+		# print("Distance: %d mm"%self.person_distance)
+		if self.person_distance < 1 and self.alert_flag == False:
 			self.Depth_level = 1
-		elif self.person_distance < 1000 and self.alert_flag == True:
+		elif self.person_distance < 1 and self.alert_flag == True:
 			self.Depth_level = 2
 		else :
 			self.Depth_level = 0
 
-		self.pub_alert.publish(Depth_level)
+		self.pub_alert.publish(self.Depth_level)
+		print("Depth_level:",self.Depth_level)
 
 	def thread_time_cal(self):
 		count = 0
 		while True: 
 			try:
-				if self.person_distance < 1000 and count < 3:
+				if self.person_distance < 1 and count < 3:
 					count += 1
 					self.alert_flag = False
 					time.sleep(1)
-				elif self.person_distance < 1000 and count == 3:
+				elif self.person_distance < 1 and count == 3:
 					self.alert_flag = True
-				elif self.person_distance >= 1000:
+				elif self.person_distance >= 1:
 					count = 0
 					self.alert_flag = False
 				# test !!
@@ -242,13 +251,14 @@ if __name__ == '__main__':
 	alert.daemon = True
 	alert.start()
 
-	cal = cal_class()
+	cal = cal_class(alert)
 	cal.vlp16_socket()
 	cal.matrix()
 	cal.Transpose()
 	try:
 		while not rospy.is_shutdown():
 			cal.task()
+			# alert.alert_level_cal()
 			rate.sleep()
 	except KeyboardInterrupt:
 		alert.join()

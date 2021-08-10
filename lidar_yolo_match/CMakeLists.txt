@@ -51,6 +51,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
    FILES
    Image.msg
+   depth_alert.msg
 #   Message2.msg
  )
 

@@ -22,7 +22,7 @@ from collisionNew import Human, collision_detection
 from yolo_detection.msg import ROI_array
 from yolo_detection.msg import ROI
 from yolo_detection.msg import cam_output
-from yolo_detection.msg import depth_alert
+# from yolo_detection.msg import depth_alert
 
 from darknet_ros_msgs.msg import BoundingBox
 from darknet_ros_msgs.msg import BoundingBoxes
@@ -35,6 +35,7 @@ from sensor_msgs.msg import Image
 # Sub-execution work function
 import threading
 
+from lidar_yolo_match.msg import depth_alert
 from lidar_yolo_match.srv import alert_output, alert_outputResponse
 from lidar_yolo_match.srv import TimdaMode, TimdaModeResponse
 
@@ -183,7 +184,7 @@ class cal_class:
 				print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
 				self.alert_calss.person_distance = distance[index0]
 				self.alert_calss.alert_level_cal()
-
+				# self.alert_calss.alert_response = self.alert_calss.alert_client_to_timda_server(self.alert_calss.Depth_level)
 			self.bounding = None							
 			print(' ')
 
@@ -196,40 +197,30 @@ class Alert(threading.Thread):
 		self.args = args
 		self.person_distance = None
 		self.alert_flag = None
+		self.alert_response = None
 
 		self.Depth_level = depth_alert()
 		self.pub_alert = rospy.Publisher("alert_level", depth_alert, queue_size=10)
-		# self.service_alert = rospy.Service('alert', alert_output, self.handle_alert)
-		# self.service_alert = rospy.Service('alert', TimdaMode, self.handle_alert) # server
-	# example server
-	def handle_alert(self, req):
-		pass
-		# TODO:add srv to mobile platform and robotic arm 
-		# if req.request == True:
-		# 	resp = kmeans_outputResponse()
-		# 	resp.tool_name = tool_select
-		# 	resp.x = grasp.x
-		# 	resp.y = grasp.y
-		# 	resp.angle = grasp.angle
-		# 	return resp
-	# example  client
-	# def kmeans_client(req):
-	# 	rospy.wait_for_service('kmeans')
-	# 	print("stay kmeans input")
-	# 	try:
-	# 		kmeans = rospy.ServiceProxy('kmeans', kmeans_output)
-	# 		kmeans_resp = kmeans(req)
-	# 		return kmeans_resp
-	# 	except rospy.ServiceException as e:
-	# 		print("Service call failed: %s"%e)
+	
+	# example  client  Person detection warning request
+	def alert_client_to_timda_server(self, req):
+		rospy.wait_for_service('TIMDA_SERVER')
+		print("stay alert input")
+		try:
+			alert = rospy.ServiceProxy('TIMDA_SERVER', TimdaMode)
+			alert_resp = alert(req)
+			return alert_resp
+		except rospy.ServiceException as e:
+			print("Service call failed: %s"%e)
+
 	def alert_level_cal(self):
 		# print("Distance: %d mm"%self.person_distance)
 		if self.person_distance < 1 and self.alert_flag == False:
-			self.Depth_level = 1
+			self.Depth_level = "level_1"
 		elif self.person_distance < 1 and self.alert_flag == True:
-			self.Depth_level = 2
+			self.Depth_level = "level_2"
 		else :
-			self.Depth_level = 0
+			self.Depth_level = "level_0"
 
 		self.pub_alert.publish(self.Depth_level)
 		print("Depth_level:",self.Depth_level)
@@ -269,7 +260,6 @@ if __name__ == '__main__':
 	try:
 		while not rospy.is_shutdown():
 			cal.task()
-			# alert.alert_level_cal()
 			rate.sleep()
 	except KeyboardInterrupt:
 		alert.join()

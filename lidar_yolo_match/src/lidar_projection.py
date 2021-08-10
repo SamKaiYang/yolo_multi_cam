@@ -10,7 +10,7 @@ import socket
 import datetime
 import cv2
 
-from velodyne_capture_v3 import init_velo_socket, get_pointcloud
+from velodyne_capture_v3 import init_velo_socket, get_pointcloud, get_cam_pointcloud
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.patches import Circle
 
@@ -48,7 +48,9 @@ if not cap.isOpened():
 
 while 1:
 	# Get pointcloud
-	pcl = get_pointcloud(soc)
+	# pcl = get_pointcloud(soc)
+	# test cam num lidar match 
+	pcl = get_cam_pointcloud(soc, 2)
 	# Get frame
 	flag, frame = cap.read()
 	cv2.imshow('frame', frame)	

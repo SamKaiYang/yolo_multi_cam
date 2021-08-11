@@ -81,7 +81,7 @@ def get_cam_pointcloud(soc,cam_num):
     timestamp = 0
     time_offset = 0
 
-
+    # cam_num = 0
     while True:
         # get data from port
         data = soc.recv(1248)

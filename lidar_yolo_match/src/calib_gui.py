@@ -224,7 +224,7 @@ def parse_args():
                         default=None, type=str)
     parser.add_argument('-outdir', dest='outdir',
                         help='Path to the output file.(excluding file name)',
-                        default='', type=str)
+                        default='./out', type=str)
     parser.add_argument('-ext_init', dest='f_ext',
                         help='Path to the initial extrinsic matrix file.',
                         default = None, type=str)

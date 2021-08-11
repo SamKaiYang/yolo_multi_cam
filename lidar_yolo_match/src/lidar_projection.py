@@ -50,7 +50,7 @@ while 1:
 	# Get pointcloud
 	# pcl = get_pointcloud(soc)
 	# test cam num lidar match 
-	pcl = get_cam_pointcloud(soc, 2)
+	pcl = get_cam_pointcloud(soc, 0)
 	# Get frame
 	flag, frame = cap.read()
 	cv2.imshow('frame', frame)	

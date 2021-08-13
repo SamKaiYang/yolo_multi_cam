@@ -43,6 +43,15 @@ cap = cv2.VideoCapture(0)
 # plt.ion()
 # plt.show()
 
+
+#0813 Average transformation is:
+# 0.99898    0.033474  -0.0302925 -0.00030335
+# -0.0362764    0.994598  -0.0972613   0.0610432
+# 0.0268731    0.098261    0.994798   0.0157042
+# 0           0           0           1
+
+# F = np.matrix([[0.99898,0.033474,-0.0302925],[-0.0362764,0.994598,-0.0972613],[0.0268731,0.098261,0.994798]])
+# T = np.matrix([[-0.00030335],[0.0610432],[0.0157042]])
 if not cap.isOpened():
 	raise IOError("cannot open webcam")
 
@@ -73,8 +82,10 @@ while 1:
 	T2= np.matrix.transpose(T2)
 
 	c2 = np.matmul((F), (R))
+	
 	c2 = .25*np.matmul((c2),(A+T2))
-
+	print(c2)
+	# cv2.circle(frame, ,int(x[1])), 3, (0,255,0), thickness=-1)
 	# Plot points on frame
 	for x in np.nditer(c2, flags = ['external_loop'], order = 'F'): 
 		cv2.circle(frame, (int(x[0]),int(x[1])), 1, (255,0,0), thickness=-1)

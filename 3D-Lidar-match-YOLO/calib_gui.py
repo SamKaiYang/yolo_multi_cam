@@ -200,11 +200,14 @@ def main(_):
 
     cparam = CalibParam(dict_calib)
     im = imread(args.f_img)
-    # im_height,im_width = np.shape(im)[:2]
+    im_height,im_width = np.shape(im)[:2]
+    print("im_height",im_height)
+    print("im_width",im_width)
     points = None
     if args.f_lidar.lower().endswith('.csv'):
         df = pd.read_csv(args.f_lidar)
         points = df.as_matrix()[:,:3]
+        print(points)
     else:
         points = np.fromfile(args.f_lidar).reshape(-1,3)
 

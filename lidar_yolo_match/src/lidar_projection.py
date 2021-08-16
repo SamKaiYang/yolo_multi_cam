@@ -20,8 +20,8 @@ soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 soc.bind(('', PORT))
 
 # For matrix values
-xr = 95 * math.pi/180
-yr = 10 * math.pi/180  
+xr = 90 * math.pi/180
+yr = 0 * math.pi/180  
 zr = 0 * math.pi/180
 
 
@@ -31,13 +31,42 @@ Xr = np.matrix([[1,0,0],[0,math.cos(xr),-1*math.sin(xr)],[0,math.sin(xr),math.co
 Yr = np.matrix([[math.cos(yr),0,math.sin(yr)],[0,1,0],[-1*math.sin(yr),0,math.cos(yr)]])
 Zr = np.matrix([[math.cos(zr),-1*math.sin(zr),0],[math.sin(zr),math.cos(zr),0],[0,0,1]])
 
-F = np.matrix([[935,0,0],[0,935,0],[225,375,1]])
-
+# F = np.matrix([[935,0,0],[0,935,0],[225,375,1]])
+F = np.matrix([[727.703247,0,0],[0,737.639832,0],[240.387843,317.400100,1]])
 R = np.matmul(Zr,Yr)
 R= np.matmul(R,Xr)
 
-T = np.matrix([[1.1],[0],[-1.32]])
 
+'''
+Average rotation is:
+0.99898   0.033474 -0.0302925
+-0.0362764   0.994598 -0.0972613
+0.0268731   0.098261   0.994798
+Final rotation is:
+-0.029497  -0.998977 -0.0342695
+-0.0972901  0.0369909  -0.994568
+0.994819 -0.0260027 -0.0982818
+'''
+# transformation = np.matrix([[-0.029497,-0.998977,-0.0342695],[-0.0972901,0.0369909,-0.994568],[0.994819,-0.0260027,-0.0982818]])
+# transformation = np.matrix([[0.99898,0.033474,-0.0302925,-0.00030335],[-0.0362764,0.994598,-0.0972613,0.0610432],[0.0268731,0.098261,0.994798,0.0157042]])
+# transformation = np.matrix([[0.99898,0.033474,-0.0302925],[-0.0362764,0.994598,-0.0972613],[0.0268731,0.098261,0.994798]])
+
+# R = transformation
+# print(R)
+"""
+Final ypr is:
+1.27642
+-1.67264
+0.258647
+Average translation is:
+-0.00030335
+0.0610432
+0.0157042
+"""
+T = np.matrix([[1.1],[0],[-1.32]]) #origin
+
+# T = np.matrix([[1.27642],[-1.67264],[0.258647]])
+# T = np.matrix([[-0.00030335],[0.0610432],[0.0157042]])
 cap = cv2.VideoCapture(0)
 # fig, ax = plt.subplots(1)
 # plt.ion()
@@ -80,11 +109,11 @@ while 1:
 	T2= np.repeat(T1,size,axis=0)
 
 	T2= np.matrix.transpose(T2)
-
-	c2 = np.matmul((F), (R))
 	
-	c2 = .25*np.matmul((c2),(A+T2))
-	print(c2)
+	c2 = np.matmul((F), (R))
+		
+	c2 = 0.25*np.matmul((c2),(A+T2))
+	# print(c2)
 	# cv2.circle(frame, ,int(x[1])), 3, (0,255,0), thickness=-1)
 	# Plot points on frame
 	for x in np.nditer(c2, flags = ['external_loop'], order = 'F'): 

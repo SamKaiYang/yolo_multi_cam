@@ -64,6 +64,7 @@ class cal_class:
 		self.cam_num = None
 		self.bounding = None
 		self.bounding_num = None
+		self.person_flag = False
 		self.alert_calss = alert_calss
 		# self.sub = rospy.Subscriber("chatter",String,self.callback)
 		self.sub_bouding = rospy.Subscriber("/darknet_ros/bounding_boxes",BoundingBoxes,self.Yolo_callback)
@@ -99,7 +100,7 @@ class cal_class:
 	def Yolo_callback(self, data):
 		self.boundingboxes = data.bounding_boxes
 		self.cam_out_num = data.cam_out
-		self.obj_num = len((data.bounding_boxes))
+		# self.obj_num = len((data.bounding_boxes))
 		# self.cam_change_flag = self.cam_boundingboxes(self.cam_out_num,self.boundingboxes)
 		
 	def Image1_callback(self, data):
@@ -109,8 +110,11 @@ class cal_class:
 			self.pub_cam_num.publish(0)
 
 			if self.cam_out_num == 0:
+				self.cam_out_num = 2 #Because the image is too large, the camera is digitally shifted
+				print("kkkkkkkkkkkkkkkk")
 				self.cam_change_flag = self.cam_boundingboxes(self.cam_out_num, self.boundingboxes)
 				self.task()
+				print("fuuuuuuuuuuuuuuuuuuuccccccccccccccckkkkkkkkkkkkkkkk")
 				self.image_cnt = 1
 
 	def Image2_callback(self, data):
@@ -120,6 +124,7 @@ class cal_class:
 			self.pub_cam_num.publish(1)
 
 			if self.cam_out_num == 1:
+				self.cam_out_num = 0 #Because the image is too large, the camera is digitally shifted
 				self.cam_change_flag = self.cam_boundingboxes(self.cam_out_num, self.boundingboxes)
 				self.task()
 				self.image_cnt = 2
@@ -131,6 +136,7 @@ class cal_class:
 			self.pub_cam_num.publish(2)
 
 			if self.cam_out_num == 2:
+				self.cam_out_num = 1 #Because the image is too large, the camera is digitally shifted
 				self.cam_change_flag = self.cam_boundingboxes(self.cam_out_num, self.boundingboxes)
 				self.task()
 				self.image_cnt = 0
@@ -142,8 +148,13 @@ class cal_class:
 					self.cam_num = self.cam_out_num
 					self.bounding = self.boundingboxes
 					self.bounding_num = i
+					self.person_flag = True 
 					# self.match_task()
-			return True
+			if self.person_flag == True:
+				self.person_flag = False
+				return True
+			else:
+				return False
 		else:
 			self.bounding = None
 			return False

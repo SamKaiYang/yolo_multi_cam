@@ -110,6 +110,7 @@ class cal_class:
 
 			if self.cam_out_num == 0:
 				self.cam_change_flag = self.cam_boundingboxes(self.cam_out_num, self.boundingboxes)
+				self.task()
 				self.image_cnt = 1
 
 	def Image2_callback(self, data):
@@ -120,6 +121,7 @@ class cal_class:
 
 			if self.cam_out_num == 1:
 				self.cam_change_flag = self.cam_boundingboxes(self.cam_out_num, self.boundingboxes)
+				self.task()
 				self.image_cnt = 2
 
 	def Image3_callback(self, data):
@@ -130,6 +132,7 @@ class cal_class:
 
 			if self.cam_out_num == 2:
 				self.cam_change_flag = self.cam_boundingboxes(self.cam_out_num, self.boundingboxes)
+				self.task()
 				self.image_cnt = 0
 
 	def cam_boundingboxes(self, cam, bounding_boxes):
@@ -324,7 +327,7 @@ if __name__ == '__main__':
 	# cal.Transpose()
 	try:
 		while not rospy.is_shutdown():
-			cal.task()
+			# cal.task()
 			rate.sleep()
 	except KeyboardInterrupt:
 		alert.join()

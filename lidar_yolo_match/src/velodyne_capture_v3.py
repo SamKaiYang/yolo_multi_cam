@@ -69,9 +69,9 @@ def get_pointcloud(soc):
                     #time_offset = (55.296 * seq_index + 2.304 * i) / 1000000.0
                     if arr[i * 2] != 0:
                         x, y, z, dist = calc(arr[i * 2], azimuth, i, timestamp + time_offset)
-                        # if y > 0:
+                        if y > 0:
                         #     data_buff.append([x, y, z, dist])
-                        data_buff.append([x, y, z, dist])
+                            data_buff.append([x, y, z, dist])
 
     return np.array(data_buff)
 def get_cam_pointcloud(soc,cam_num):
@@ -97,36 +97,80 @@ def get_cam_pointcloud(soc,cam_num):
             flag, azimuth = struct.unpack_from("<HH", raw_data, offset)
             #assert flag == 0xEEFF, hex(flag)
             for step in xrange(2):
-                ## important 0805 # TODO:Azimuth Angle Specify the projection angle range
-                if cam_num == 0:
-                    if azimuth <= 6000 or  azimuth > 30000: 
-                        # H-distance (2mm step), B-reflectivity (0
-                        arr = struct.unpack_from('<' + "HB" * 16, data, offset + 4 + step * 48)
-                        for i in xrange(NUM_LASERS):
-                            #time_offset = (55.296 * seq_index + 2.304 * i) / 1000000.0
-                            if arr[i * 2] != 0:
-                                x, y, z, dist = calc(arr[i * 2], azimuth, i, timestamp + time_offset)
+                ## important 0818 # TODO:Azimuth Angle Specify the projection angle range
+                # H-distance (2mm step), B-reflectivity (0
+                arr = struct.unpack_from('<' + "HB" * 16, data, offset + 4 + step * 48)
+                for i in xrange(NUM_LASERS):
+                    #time_offset = (55.296 * seq_index + 2.304 * i) / 1000000.0
+                    if arr[i * 2] != 0:
+                        x, y, z, dist = calc(arr[i * 2], azimuth, i, timestamp + time_offset)
+                        if cam_num == 0:
+                            if y > 0:
                                 data_buff.append([x, y, z, dist])
-                elif cam_num == 1:
-                    if azimuth <= 18000 and  azimuth > 6000: 
-                        # H-distance (2mm step), B-reflectivity (0
-                        arr = struct.unpack_from('<' + "HB" * 16, data, offset + 4 + step * 48)
-                        for i in xrange(NUM_LASERS):
-                            #time_offset = (55.296 * seq_index + 2.304 * i) / 1000000.0
-                            if arr[i * 2] != 0:
-                                x, y, z, dist = calc(arr[i * 2], azimuth, i, timestamp + time_offset)
+                        elif cam_num == 1:  
+                            if y < 0:
                                 data_buff.append([x, y, z, dist])
-                elif cam_num == 2:
-                    if azimuth <= 30000 and  azimuth > 18000: 
-                        # H-distance (2mm step), B-reflectivity (0
-                        arr = struct.unpack_from('<' + "HB" * 16, data, offset + 4 + step * 48)
-                        for i in xrange(NUM_LASERS):
-                            #time_offset = (55.296 * seq_index + 2.304 * i) / 1000000.0
-                            if arr[i * 2] != 0:
-                                x, y, z, dist = calc(arr[i * 2], azimuth, i, timestamp + time_offset)
+                        elif cam_num == 2:
+                            if y < 0:
                                 data_buff.append([x, y, z, dist])
+                        #     data_buff.append([x, y, z, dist])
+                            
+                
 
     return np.array(data_buff)
+# def get_cam_pointcloud(soc,cam_num):
+#     prev_time = datetime.now()
+#     data_buff = []
+#     count = 0
+#     timestamp = 0
+#     time_offset = 0
+
+#     # cam_num = 0
+#     while True:
+#         # get data from port
+#         data = soc.recv(1248)
+#         # TODO:find lidar scan angle
+#         count += 1 ########??? angle 90?
+#         if count == 90:
+#             count = 0
+#             break
+#         #print('pcl size: ', len(data))
+#         # get all data except the last 2 bytes
+#         raw_data = data[:-2]
+#         for offset in xrange(0, 1200, 100):
+#             flag, azimuth = struct.unpack_from("<HH", raw_data, offset)
+#             #assert flag == 0xEEFF, hex(flag)
+#             for step in xrange(2):
+#                 ## important 0805 # TODO:Azimuth Angle Specify the projection angle range
+#                 if cam_num == 0:
+#                     if azimuth <= 6000 or  azimuth > 30000: 
+#                         # H-distance (2mm step), B-reflectivity (0
+#                         arr = struct.unpack_from('<' + "HB" * 16, data, offset + 4 + step * 48)
+#                         for i in xrange(NUM_LASERS):
+#                             #time_offset = (55.296 * seq_index + 2.304 * i) / 1000000.0
+#                             if arr[i * 2] != 0:
+#                                 x, y, z, dist = calc(arr[i * 2], azimuth, i, timestamp + time_offset)
+#                                 data_buff.append([x, y, z, dist])
+#                 elif cam_num == 1:
+#                     if azimuth <= 18000 and  azimuth > 6000: 
+#                         # H-distance (2mm step), B-reflectivity (0
+#                         arr = struct.unpack_from('<' + "HB" * 16, data, offset + 4 + step * 48)
+#                         for i in xrange(NUM_LASERS):
+#                             #time_offset = (55.296 * seq_index + 2.304 * i) / 1000000.0
+#                             if arr[i * 2] != 0:
+#                                 x, y, z, dist = calc(arr[i * 2], azimuth, i, timestamp + time_offset)
+#                                 data_buff.append([x, y, z, dist])
+#                 elif cam_num == 2:
+#                     if azimuth <= 30000 and  azimuth > 18000: 
+#                         # H-distance (2mm step), B-reflectivity (0
+#                         arr = struct.unpack_from('<' + "HB" * 16, data, offset + 4 + step * 48)
+#                         for i in xrange(NUM_LASERS):
+#                             #time_offset = (55.296 * seq_index + 2.304 * i) / 1000000.0
+#                             if arr[i * 2] != 0:
+#                                 x, y, z, dist = calc(arr[i * 2], azimuth, i, timestamp + time_offset)
+#                                 data_buff.append([x, y, z, dist])
+
+#     return np.array(data_buff)
 
 
 

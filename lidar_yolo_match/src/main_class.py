@@ -3,6 +3,7 @@ import sys
 import rospy
 import os
 import numpy as np
+from numpy.linalg import inv, qr
 import math 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -52,6 +53,12 @@ class cal_class:
 		self.T1 = None
 		self.F = None
 		self.R = None
+		self.h = None
+		self.camera_matrix = None
+		self.h_2 = None
+		self.camera_matrix_2 = None
+		self.h_3 = None
+		self.camera_matrix_3 = None
 		self.cam_change_flag = False
 		self.data_count = 0
 		self.cam_num = None
@@ -74,25 +81,17 @@ class cal_class:
 		self.soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self.soc.bind(('', PORT))
 
-	def matrix(self):
-		# For matrix values
-		xr = 95 * math.pi/180
-		yr = 10 * math.pi/180  
-		zr = 0 * math.pi/180
-
-		# Get R matrix
-		Xr = np.matrix([[1,0,0],[0,math.cos(xr),-1*math.sin(xr)],[0,math.sin(xr),math.cos(xr)]])
-		Yr = np.matrix([[math.cos(yr),0,math.sin(yr)],[0,1,0],[-1*math.sin(yr),0,math.cos(yr)]])
-		Zr = np.matrix([[math.cos(zr),-1*math.sin(zr),0],[math.sin(zr),math.cos(zr),0],[0,0,1]])
-
-		self.F = np.matrix([[935,0,0],[0,935,0],[225,375,1]])
-
-		R = np.matmul(Zr,Yr)
-		self.R= np.matmul(R,Xr)
-
-	def Transpose(self):
-		T = np.matrix([[0.9],[0],[-1.32]])
-		self.T1=np.matrix.transpose(T)
+	def tranform_cal(self):
+		self.camera_matrix = np.matrix([[769.534729,0.000000,653.262129],[0.000000,788.671204,360.453779],[0.000000,0.000000,1.000000]])
+		avg_transformation = np.matrix([[0.99911,0.0119529,0.040449,0.0160659],[-0.0123006,0.999889,0.00835869,-0.0894833],[-0.0403446,-0.00884879,0.999147,0.0650598],[0,0,0,1]])
+		final_rotation = np.matrix([[-0.029497,-0.998977,-0.0342695],[-0.0972901,0.0369909,-0.994568],[0.994819,-0.0260027,-0.0982818]])
+		rotation_inv = inv(final_rotation)
+		avg_transformation_inv = inv(avg_transformation)
+		t=np.array([[0],[0],[0]]) 
+		t=np.array([[-0.07295466],[0.02105128],[-0.08205254]]) 
+		# t=np.array([[-0.01452749],[0.08985711],[-0.06490614]]) 
+		# h=np.hstack((rotation_inv.T,t))                           # stacked [R | t] 3*4 matrix
+		self.h=np.hstack((rotation_inv.T,t))
 
 	def YoloCount_callback(self, data):
 		self.data_count = data.count
@@ -101,6 +100,7 @@ class cal_class:
 		self.boundingboxes = data.bounding_boxes
 		self.cam_out_num = data.cam_out
 		self.obj_num = len((data.bounding_boxes))
+		# self.cam_change_flag = self.cam_boundingboxes(self.cam_out_num,self.boundingboxes)
 		
 	def Image1_callback(self, data):
 		self.image1 = data 
@@ -139,11 +139,61 @@ class cal_class:
 					self.cam_num = self.cam_out_num
 					self.bounding = self.boundingboxes
 					self.bounding_num = i
+					# self.match_task()
 			return True
 		else:
 			self.bounding = None
 			return False
-				
+	def match_task(self):
+		print("cam_out_num",self.cam_num)
+		xmin = self.bounding[self.bounding_num].xmin
+		ymin = self.bounding[self.bounding_num].ymin
+		xmax = self.bounding[self.bounding_num].xmax
+		ymax = self.bounding[self.bounding_num].ymax
+		# # Center of box
+		xcenter = (xmin+xmax)/2.0
+		ycenter = (ymin+ymax)/2.0
+
+		pcl = get_cam_pointcloud(self.soc,self.cam_num)
+		X= pcl[:,0]
+		Y= pcl[:,1]
+		Z= pcl[:,2]
+		distance = pcl[:,3]
+		# make A matrix (x y z)
+		size= len(X)
+
+		X1= np.matrix.transpose(X)
+		Y1= np.matrix.transpose(Y)
+		Z1= np.matrix.transpose(Z)
+		W= np.ones(size)
+		W1= np.matrix.transpose(W)
+		A=[X1,Y1,Z1]
+		pcl_matrix= np.matrix([X1,Y1,Z1,W1])
+	#----------------0818
+		# Convert to vlp16 ros coordinate system output
+		A=[X1,Y1,Z1,W1]
+		real_vlp_to_ros = np.matrix([[0,-1,0,0],[1,0,0,0],[0,0,1,0],[0,0,0,1]])
+		pcl_matrix = np.matmul((real_vlp_to_ros),(A))
+		# pcl_matrix = np.hstack([pcl_matrix,W1])
+		# print("ducccccck",pcl_matrix)
+		#-------------
+		F = np.matmul((self.h),(pcl_matrix))
+		cv_points = np.matmul((self.camera_matrix),(F))/F[2,:]
+
+		imPoints=self.h.dot(pcl_matrix)        # transforming points from world frame to camera frame
+		imPoints=self.camera_matrix.dot(imPoints)        # projecting points to image plane
+		imPoints=imPoints/imPoints[2,:] 
+
+		B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
+		# Get index of lidar point for detected object
+		index0 = int(np.argmin(B, axis=1))
+		# TODO: Distance conversion and testing
+		print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
+		self.alert_calss.person_distance = distance[index0]
+		self.alert_calss.alert_level_cal()
+		# self.alert_calss.alert_response = self.alert_calss.alert_client_to_timda_server(self.alert_calss.Depth_level)						
+		print(' ')
+
 	def task(self):
 		if self.cam_change_flag == True:
 			self.cam_change_flag = False
@@ -168,16 +218,30 @@ class cal_class:
 				distance = pcl[:,3]
 				# make A matrix (x y z)
 				size= len(X)
+
 				X1= np.matrix.transpose(X)
 				Y1= np.matrix.transpose(Y)
 				Z1= np.matrix.transpose(Z)
-				A= np.matrix([X1, Y1 ,Z1])
-				T2= np.repeat(self.T1,size,axis=0)
-				T2= np.matrix.transpose(T2)
-				# Multiply matrices (lidar points in pixel coordinates)
-				c2 = np.matmul((self.F), (self.R))
-				c2 = .25*np.matmul((c2),(A+T2))	
-				B = np.square((c2[0,:]-xcenter))+ np.square((c2[1,:]-ycenter))
+				W= np.ones(size)
+				W1= np.matrix.transpose(W)
+				A=[X1,Y1,Z1]
+				pcl_matrix= np.matrix([X1,Y1,Z1,W1])
+			#----------------0818
+				# Convert to vlp16 ros coordinate system output
+				A=[X1,Y1,Z1,W1]
+				real_vlp_to_ros = np.matrix([[0,-1,0,0],[1,0,0,0],[0,0,1,0],[0,0,0,1]])
+				pcl_matrix = np.matmul((real_vlp_to_ros),(A))
+				# pcl_matrix = np.hstack([pcl_matrix,W1])
+				# print("ducccccck",pcl_matrix)
+				#-------------
+				F = np.matmul((self.h),(pcl_matrix))
+				cv_points = np.matmul((self.camera_matrix),(F))/F[2,:]
+
+				imPoints=self.h.dot(pcl_matrix)        # transforming points from world frame to camera frame
+				imPoints=self.camera_matrix.dot(imPoints)        # projecting points to image plane
+				imPoints=imPoints/imPoints[2,:] 
+
+				B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
 				# Get index of lidar point for detected object
 				index0 = int(np.argmin(B, axis=1))
 				# TODO: Distance conversion and testing
@@ -195,7 +259,7 @@ class Alert(threading.Thread):
                                name=name, args=args, kwargs=kwargs,
                                verbose=verbose)
 		self.args = args
-		self.person_distance = None
+		self.person_distance = 3
 		self.alert_flag = None
 		self.alert_response = None
 
@@ -255,8 +319,9 @@ if __name__ == '__main__':
 
 	cal = cal_class(alert)
 	cal.vlp16_socket()
-	cal.matrix()
-	cal.Transpose()
+	cal.tranform_cal()
+	# cal.matrix()
+	# cal.Transpose()
 	try:
 		while not rospy.is_shutdown():
 			cal.task()

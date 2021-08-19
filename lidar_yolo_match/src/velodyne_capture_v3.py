@@ -31,7 +31,7 @@ def init_velo_socket():
 def calc(dis, azimuth, laser_id, timestamp):
     R = dis * DISTANCE_RESOLUTION
     omega = LASER_ANGLES[laser_id] * np.pi / 180.0
-    alpha = azimuth / 100.0 * np.pi / 180.0
+    alpha = azimuth / 100.0 * np.pi / 180.0 # deg = (azimuth / 100.0)
     X = R * np.cos(omega) * np.sin(alpha)
     Y = R * np.cos(omega) * np.cos(alpha)
     Z = R * np.sin(omega)
@@ -103,14 +103,18 @@ def get_cam_pointcloud(soc,cam_num):
                 for i in xrange(NUM_LASERS):
                     #time_offset = (55.296 * seq_index + 2.304 * i) / 1000000.0
                     if arr[i * 2] != 0:
+                        # deg = (azimuth / 100.0) # Plane scanning angle 
                         x, y, z, dist = calc(arr[i * 2], azimuth, i, timestamp + time_offset)
                         if cam_num == 0:
+                            # if deg < 60 or deg > 300
                             if y > 0:
                                 data_buff.append([x, y, z, dist])
                         elif cam_num == 1:  
+                            # if deg > 60 and deg < 180
                             if y < 0:
                                 data_buff.append([x, y, z, dist])
                         elif cam_num == 2:
+                            # if deg > 180 and deg < 300
                             if y < 0:
                                 data_buff.append([x, y, z, dist])
                         #     data_buff.append([x, y, z, dist])

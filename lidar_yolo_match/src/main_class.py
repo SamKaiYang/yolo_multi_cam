@@ -83,16 +83,26 @@ class cal_class:
 		self.soc.bind(('', PORT))
 
 	def tranform_cal(self):
+		# lidar to camera 1
 		self.camera_matrix = np.matrix([[769.534729,0.000000,653.262129],[0.000000,788.671204,360.453779],[0.000000,0.000000,1.000000]])
-		avg_transformation = np.matrix([[0.99911,0.0119529,0.040449,0.0160659],[-0.0123006,0.999889,0.00835869,-0.0894833],[-0.0403446,-0.00884879,0.999147,0.0650598],[0,0,0,1]])
 		final_rotation = np.matrix([[-0.029497,-0.998977,-0.0342695],[-0.0972901,0.0369909,-0.994568],[0.994819,-0.0260027,-0.0982818]])
 		rotation_inv = inv(final_rotation)
-		avg_transformation_inv = inv(avg_transformation)
-		t=np.array([[0],[0],[0]]) 
 		t=np.array([[-0.07295466],[0.02105128],[-0.08205254]]) 
-		# t=np.array([[-0.01452749],[0.08985711],[-0.06490614]]) 
-		# h=np.hstack((rotation_inv.T,t))                           # stacked [R | t] 3*4 matrix
-		self.h=np.hstack((rotation_inv.T,t))
+		self.h=np.hstack((rotation_inv.T,t)) # stacked [R | t] 3*4 matrix
+		
+		# TODO: test lidar multi cam fusion select 
+		# lidar to camera 2
+		self.camera_matrix_2 = np.matrix([[769.534729,0.000000,653.262129],[0.000000,788.671204,360.453779],[0.000000,0.000000,1.000000]])
+		final_rotation_2 = np.matrix([[-0.029497,-0.998977,-0.0342695],[-0.0972901,0.0369909,-0.994568],[0.994819,-0.0260027,-0.0982818]])
+		rotation_inv_2 = inv(final_rotation_2)
+		t_2=np.array([[-0.07295466],[0.02105128],[-0.08205254]])  
+		self.h_2=np.hstack((rotation_inv_2.T,t_2)) # stacked [R | t] 3*4 matrix
+		# lidar to camera 3
+		self.camera_matrix_3 = np.matrix([[769.534729,0.000000,653.262129],[0.000000,788.671204,360.453779],[0.000000,0.000000,1.000000]])
+		final_rotation_3 = np.matrix([[-0.029497,-0.998977,-0.0342695],[-0.0972901,0.0369909,-0.994568],[0.994819,-0.0260027,-0.0982818]])
+		rotation_inv_3 = inv(final_rotation_3)
+		t_3=np.array([[-0.07295466],[0.02105128],[-0.08205254]]) 
+		self.h_3=np.hstack((rotation_inv_3.T,t)) # stacked [R | t] 3*4 matrix
 
 	def YoloCount_callback(self, data):
 		self.data_count = data.count
@@ -111,10 +121,8 @@ class cal_class:
 
 			if self.cam_out_num == 0:
 				self.cam_out_num = 2 #Because the image is too large, the camera is digitally shifted
-				print("kkkkkkkkkkkkkkkk")
 				self.cam_change_flag = self.cam_boundingboxes(self.cam_out_num, self.boundingboxes)
 				self.task()
-				print("fuuuuuuuuuuuuuuuuuuuccccccccccccccckkkkkkkkkkkkkkkk")
 				self.image_cnt = 1
 
 	def Image2_callback(self, data):
@@ -158,55 +166,104 @@ class cal_class:
 		else:
 			self.bounding = None
 			return False
-	def match_task(self):
-		print("cam_out_num",self.cam_num)
-		xmin = self.bounding[self.bounding_num].xmin
-		ymin = self.bounding[self.bounding_num].ymin
-		xmax = self.bounding[self.bounding_num].xmax
-		ymax = self.bounding[self.bounding_num].ymax
-		# # Center of box
-		xcenter = (xmin+xmax)/2.0
-		ycenter = (ymin+ymax)/2.0
+    # TODO: test lidar multi cam fusion select 
+	def lidar_cam_fusion(self,cam_num,pcl_matrix,xcenter,ycenter,distance):
+		if cam_num == 0:
+			F = np.matmul((self.h),(pcl_matrix))
+			cv_points = np.matmul((self.camera_matrix),(F))/F[2,:]
 
-		pcl = get_cam_pointcloud(self.soc,self.cam_num)
-		X= pcl[:,0]
-		Y= pcl[:,1]
-		Z= pcl[:,2]
-		distance = pcl[:,3]
-		# make A matrix (x y z)
-		size= len(X)
+			# imPoints=self.h.dot(pcl_matrix)        # transforming points from world frame to camera frame
+			# imPoints=self.camera_matrix.dot(imPoints)        # projecting points to image plane
+			# imPoints=imPoints/imPoints[2,:] 
 
-		X1= np.matrix.transpose(X)
-		Y1= np.matrix.transpose(Y)
-		Z1= np.matrix.transpose(Z)
-		W= np.ones(size)
-		W1= np.matrix.transpose(W)
-		A=[X1,Y1,Z1]
-		pcl_matrix= np.matrix([X1,Y1,Z1,W1])
-	#----------------0818
-		# Convert to vlp16 ros coordinate system output
-		A=[X1,Y1,Z1,W1]
-		real_vlp_to_ros = np.matrix([[0,-1,0,0],[1,0,0,0],[0,0,1,0],[0,0,0,1]])
-		pcl_matrix = np.matmul((real_vlp_to_ros),(A))
-		# pcl_matrix = np.hstack([pcl_matrix,W1])
-		# print("ducccccck",pcl_matrix)
-		#-------------
-		F = np.matmul((self.h),(pcl_matrix))
-		cv_points = np.matmul((self.camera_matrix),(F))/F[2,:]
+			B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
+			# Get index of lidar point for detected object
+			index0 = int(np.argmin(B, axis=1))
+			# TODO: Distance conversion and testing
+			print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
+			self.alert_calss.person_distance = distance[index0]
+			self.alert_calss.alert_level_cal()
+		elif cam_num == 1:
+			F = np.matmul((self.h_2),(pcl_matrix))
+			cv_points = np.matmul((self.camera_matrix_2),(F))/F[2,:]
 
-		imPoints=self.h.dot(pcl_matrix)        # transforming points from world frame to camera frame
-		imPoints=self.camera_matrix.dot(imPoints)        # projecting points to image plane
-		imPoints=imPoints/imPoints[2,:] 
+			# imPoints=self.h_2.dot(pcl_matrix)        # transforming points from world frame to camera frame
+			# imPoints=self.camera_matrix_2.dot(imPoints)        # projecting points to image plane
+			# imPoints=imPoints/imPoints[2,:] 
 
-		B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
-		# Get index of lidar point for detected object
-		index0 = int(np.argmin(B, axis=1))
-		# TODO: Distance conversion and testing
-		print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
-		self.alert_calss.person_distance = distance[index0]
-		self.alert_calss.alert_level_cal()
-		# self.alert_calss.alert_response = self.alert_calss.alert_client_to_timda_server(self.alert_calss.Depth_level)						
-		print(' ')
+			B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
+			# Get index of lidar point for detected object
+			index0 = int(np.argmin(B, axis=1))
+			# TODO: Distance conversion and testing
+			print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
+			self.alert_calss.person_distance = distance[index0]
+			self.alert_calss.alert_level_cal()
+		elif cam_num == 2:
+			F = np.matmul((self.h),(pcl_matrix))
+			cv_points = np.matmul((self.camera_matrix_3),(F))/F[2,:]
+
+			# imPoints=self.h_3.dot(pcl_matrix)        # transforming points from world frame to camera frame
+			# imPoints=self.camera_matrix_3.dot(imPoints)        # projecting points to image plane
+			# imPoints=imPoints/imPoints[2,:] 
+
+			B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
+			# Get index of lidar point for detected object
+			index0 = int(np.argmin(B, axis=1))
+			# TODO: Distance conversion and testing
+			print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
+			self.alert_calss.person_distance = distance[index0]
+			self.alert_calss.alert_level_cal()
+		
+		
+	# def match_task(self):
+	# 	print("cam_out_num",self.cam_num)
+	# 	xmin = self.bounding[self.bounding_num].xmin
+	# 	ymin = self.bounding[self.bounding_num].ymin
+	# 	xmax = self.bounding[self.bounding_num].xmax
+	# 	ymax = self.bounding[self.bounding_num].ymax
+	# 	# # Center of box
+	# 	xcenter = (xmin+xmax)/2.0
+	# 	ycenter = (ymin+ymax)/2.0
+
+	# 	pcl = get_cam_pointcloud(self.soc,self.cam_num)
+	# 	X= pcl[:,0]
+	# 	Y= pcl[:,1]
+	# 	Z= pcl[:,2]
+	# 	distance = pcl[:,3]
+	# 	# make A matrix (x y z)
+	# 	size= len(X)
+
+	# 	X1= np.matrix.transpose(X)
+	# 	Y1= np.matrix.transpose(Y)
+	# 	Z1= np.matrix.transpose(Z)
+	# 	W= np.ones(size)
+	# 	W1= np.matrix.transpose(W)
+	# 	A=[X1,Y1,Z1]
+	# 	pcl_matrix= np.matrix([X1,Y1,Z1,W1])
+	# #----------------0818
+	# 	# Convert to vlp16 ros coordinate system output
+	# 	A=[X1,Y1,Z1,W1]
+	# 	real_vlp_to_ros = np.matrix([[0,-1,0,0],[1,0,0,0],[0,0,1,0],[0,0,0,1]])
+	# 	pcl_matrix = np.matmul((real_vlp_to_ros),(A))
+	# 	# pcl_matrix = np.hstack([pcl_matrix,W1])
+	# 	# print("ducccccck",pcl_matrix)
+	# 	#-------------
+	# 	F = np.matmul((self.h),(pcl_matrix))
+	# 	cv_points = np.matmul((self.camera_matrix),(F))/F[2,:]
+
+	# 	imPoints=self.h.dot(pcl_matrix)        # transforming points from world frame to camera frame
+	# 	imPoints=self.camera_matrix.dot(imPoints)        # projecting points to image plane
+	# 	imPoints=imPoints/imPoints[2,:] 
+
+	# 	B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
+	# 	# Get index of lidar point for detected object
+	# 	index0 = int(np.argmin(B, axis=1))
+	# 	# TODO: Distance conversion and testing
+	# 	print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
+	# 	self.alert_calss.person_distance = distance[index0]
+	# 	self.alert_calss.alert_level_cal()
+	# 	# self.alert_calss.alert_response = self.alert_calss.alert_client_to_timda_server(self.alert_calss.Depth_level)						
+	# 	print(' ')
 
 	def task(self):
 		if self.cam_change_flag == True:
@@ -245,16 +302,16 @@ class cal_class:
 				A=[X1,Y1,Z1,W1]
 				real_vlp_to_ros = np.matrix([[0,-1,0,0],[1,0,0,0],[0,0,1,0],[0,0,0,1]])
 				pcl_matrix = np.matmul((real_vlp_to_ros),(A))
-				# pcl_matrix = np.hstack([pcl_matrix,W1])
-				# print("ducccccck",pcl_matrix)
 				#-------------
+				# TODO: test lidar multi cam fusion select 
+				# self.lidar_cam_fusion(self.cam_num,pcl_matrix,xcenter,ycenter,distance)
+
 				F = np.matmul((self.h),(pcl_matrix))
 				cv_points = np.matmul((self.camera_matrix),(F))/F[2,:]
 
 				imPoints=self.h.dot(pcl_matrix)        # transforming points from world frame to camera frame
 				imPoints=self.camera_matrix.dot(imPoints)        # projecting points to image plane
 				imPoints=imPoints/imPoints[2,:] 
-
 				B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
 				# Get index of lidar point for detected object
 				index0 = int(np.argmin(B, axis=1))
@@ -334,8 +391,6 @@ if __name__ == '__main__':
 	cal = cal_class(alert)
 	cal.vlp16_socket()
 	cal.tranform_cal()
-	# cal.matrix()
-	# cal.Transpose()
 	try:
 		while not rospy.is_shutdown():
 			# cal.task()

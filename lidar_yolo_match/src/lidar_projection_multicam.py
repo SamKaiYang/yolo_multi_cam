@@ -132,12 +132,12 @@ if __name__ == '__main__':
         pcl_matrix = np.matmul((real_vlp_to_ros),(A))
         #-------------
         cv_points = cal.lidar_cam_fusion(cam,pcl_matrix)
-
+        cv2.circle(frame, (50,100), 10, (255,0,0), thickness=-1)
         for x in np.nditer(cv_points, flags = ['external_loop'], order = 'F'): 
             # print((x[0]))
             if int(x[0])<1280 and int(x[1])<720 :
                 # 1280 -> right/u # 720 down/v  
-                cv2.circle(frame, (int(x[0]),int(x[1])), 1, (255,0,0), thickness=-1)
+                cv2.circle(frame, (int(x[0]),int(720-x[1])), 1, (255,0,0), thickness=-1)
                 # print(x)
         cv2.imshow('frame', frame)
 

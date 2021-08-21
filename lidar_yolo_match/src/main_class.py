@@ -141,7 +141,8 @@ class cal_class:
 			self.image_cnt = 1
 
 	def Image2_callback(self, data):
-		self.image2 = data 
+		self.image2 = data
+		# print(data.header)
 		if self.image_cnt == 1:
 			self.pub_image.publish(self.image2)
 			

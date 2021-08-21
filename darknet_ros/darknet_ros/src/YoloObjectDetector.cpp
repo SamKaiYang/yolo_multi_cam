@@ -8,7 +8,7 @@
 
 // yolo object detector
 #include "darknet_ros/YoloObjectDetector.hpp"
-
+#include <iostream>   // preprocessing directive
 // Check for xServer
 #include <X11/Xlib.h>
 
@@ -232,6 +232,8 @@ void YoloObjectDetector::cameraCallback(const sensor_msgs::ImageConstPtr& msg)
     {
       boost::unique_lock<boost::shared_mutex> lockImageCallback(mutexImageCallback_);
       imageHeader_ = msg->header;
+      //std::cout<<"Header:\n"<<imageHeader_.frame_id;
+  
       camImageCopy_ = cam_image->image.clone();
     }
     {
@@ -667,6 +669,7 @@ void *YoloObjectDetector::publishInThread()
     boundingBoxesResults_.header.frame_id = "detection";
     boundingBoxesResults_.image_header = headerBuff_[(buffIndex_ + 1) % 3];
     boundingBoxesResults_.cam_out = cam_number; //cam_out
+    boundingBoxesResults_.frame_id = imageHeader_.frame_id; //image->frame_id
     boundingBoxesPublisher_.publish(boundingBoxesResults_);
   } else {
     darknet_ros_msgs::ObjectCount msg;

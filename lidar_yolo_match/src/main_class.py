@@ -15,7 +15,7 @@ import socket
 code to get lidar point cloud, get bounding boxes for that frame, 
 and predict a collision using Kalman filter (in progress)
 '''
-from velodyne_capture_v3 import init_velo_socket, get_pointcloud, get_cam_pointcloud
+from velodyne_capture_multicam import init_velo_socket, get_pointcloud, get_cam_pointcloud
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.patches import Circle
 from collisionNew import Human, collision_detection
@@ -85,23 +85,38 @@ class cal_class:
 	def tranform_cal(self):
 		# lidar to camera 1
 		self.camera_matrix = np.matrix([[769.534729,0.000000,653.262129],[0.000000,788.671204,360.453779],[0.000000,0.000000,1.000000]])
-		final_rotation = np.matrix([[-0.029497,-0.998977,-0.0342695],[-0.0972901,0.0369909,-0.994568],[0.994819,-0.0260027,-0.0982818]])
+		final_rotation = np.matrix([[0.00525551,-0.999785,-0.0200588],[-0.00248811,0.020046,-0.999796],[0.999983,0.00530435,-0.00238222]])
 		rotation_inv = inv(final_rotation)
-		t=np.array([[-0.07295466],[0.02105128],[-0.08205254]]) 
+		t=np.array([[0.0431043],[-0.0184322],[0.025641],[1]])
+		zero = [0,0,0]
+		final_rotation_test = np.vstack((final_rotation,zero))
+		h_test = inv(np.hstack((final_rotation_test,t)))
+		# print("h_test:",h_test)
+		t=np.array([[h_test[0,3] ],[h_test[1,3]],[h_test[2,3]]]) 
 		self.h=np.hstack((rotation_inv.T,t)) # stacked [R | t] 3*4 matrix
-		
 		# TODO: test lidar multi cam fusion select 
-		# lidar to camera 2
-		self.camera_matrix_2 = np.matrix([[769.534729,0.000000,653.262129],[0.000000,788.671204,360.453779],[0.000000,0.000000,1.000000]])
-		final_rotation_2 = np.matrix([[-0.029497,-0.998977,-0.0342695],[-0.0972901,0.0369909,-0.994568],[0.994819,-0.0260027,-0.0982818]])
+		# lidar to camera 2 right 
+		self.camera_matrix_2  = np.matrix([[755.469543,0.000000,621.616852],[0.000000,763.467896,386.262318],[0.000000,0.000000,1.000000]])
+		final_rotation_2 = np.matrix([[-0.858299,0.51315,0.000899662],[0.0780764,0.132324,-0.988127],[-0.507176,-0.848038,-0.153638]])
 		rotation_inv_2 = inv(final_rotation_2)
-		t_2=np.array([[-0.07295466],[0.02105128],[-0.08205254]])  
+
+		t_2=np.array([[0.00627183],[0.0100153],[0.0256176],[1]])
+		zero = [0,0,0]
+		final_rotation_test_2 = np.vstack((final_rotation_2,zero))
+		h_test_2 = inv(np.hstack((final_rotation_test_2,t_2)))
+		# print("h_test:",h_test)
+		t_2=np.array([[h_test_2[0,3] ],[h_test_2[1,3]],[h_test_2[2,3]]]) 
 		self.h_2=np.hstack((rotation_inv_2.T,t_2)) # stacked [R | t] 3*4 matrix
-		# lidar to camera 3
-		self.camera_matrix_3 = np.matrix([[769.534729,0.000000,653.262129],[0.000000,788.671204,360.453779],[0.000000,0.000000,1.000000]])
-		final_rotation_3 = np.matrix([[-0.029497,-0.998977,-0.0342695],[-0.0972901,0.0369909,-0.994568],[0.994819,-0.0260027,-0.0982818]])
-		rotation_inv_3 = inv(final_rotation_3)
-		t_3=np.array([[-0.07295466],[0.02105128],[-0.08205254]]) 
+		# lidar to camera 3 left
+		self.camera_matrix_3 = np.matrix([[1108.952148,0.000000,636.424646],[0.000000,1114.169434,416.902895],[0.000000,0.000000,1.000000]])
+		final_rotation_3 = np.matrix([[0.866997,0.498306,-0.00278755],[0.0215986,-0.0431667,-0.998834],[-0.497846 ,0.865926,-0.0481881]])
+		rotation_inv_3 = inv(final_rotation_3) 
+		t_3=np.array([[0.00521209],[-0.0790055],[0.0274718],[1]])
+		zero = [0,0,0]
+		final_rotation_test_3 = np.vstack((final_rotation_3,zero))
+		h_test_3 = inv(np.hstack((final_rotation_test_3,t_3)))
+		# print("h_test:",h_test)
+		t_3=np.array([[h_test_3[0,3] ],[h_test_3[1,3]],[h_test_3[2,3]]])  
 		self.h_3=np.hstack((rotation_inv_3.T,t_3)) # stacked [R | t] 3*4 matrix
 
 	def YoloCount_callback(self, data):
@@ -213,7 +228,18 @@ class cal_class:
 			print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
 			self.alert_calss.person_distance = distance[index0]
 			self.alert_calss.alert_level_cal()
-		
+	def lidar_cam_fusion(self,cam_num,pcl_point):
+		if cam_num == 0:
+			F = np.matmul((self.h),(pcl_point))
+			cv_points = np.matmul((self.camera_matrix),(F))/F[2,:]
+		elif cam_num == 1:
+			F_2 = np.matmul((self.h_2),(pcl_point))
+			cv_points = np.matmul((self.camera_matrix_2),(F_2))/F_2[2,:]
+		elif cam_num == 2:
+			F_3 = np.matmul((self.h_3),(pcl_point))
+			cv_points = np.matmul((self.camera_matrix_3),(F_3))/F_3[2,:]
+		return cv_points
+
 
 
 	def task(self):
@@ -255,14 +281,13 @@ class cal_class:
 				pcl_matrix = np.matmul((real_vlp_to_ros),(A))
 				#-------------
 				# TODO: test lidar multi cam fusion select 
-				# self.lidar_cam_fusion(self.cam_num,pcl_matrix,xcenter,ycenter,distance)
+				cv_points = self.lidar_cam_fusion(self.cam_num,pcl_matrix)
+				# F = np.matmul((self.h),(pcl_matrix))
+				# cv_points = np.matmul((self.camera_matrix),(F))/F[2,:]
 
-				F = np.matmul((self.h),(pcl_matrix))
-				cv_points = np.matmul((self.camera_matrix),(F))/F[2,:]
-
-				imPoints=self.h.dot(pcl_matrix)        # transforming points from world frame to camera frame
-				imPoints=self.camera_matrix.dot(imPoints)        # projecting points to image plane
-				imPoints=imPoints/imPoints[2,:] 
+				# imPoints=self.h.dot(pcl_matrix)        # transforming points from world frame to camera frame
+				# imPoints=self.camera_matrix.dot(imPoints)        # projecting points to image plane
+				# imPoints=imPoints/imPoints[2,:] 
 				B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
 				# Get index of lidar point for detected object
 				index0 = int(np.argmin(B, axis=1))

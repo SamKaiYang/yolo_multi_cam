@@ -125,7 +125,7 @@ class cal_class:
 		self.boundingboxes = data.bounding_boxes
 		self.cam_out_num = data.cam_out
 		self.image_frame_id = data.frame_id
-
+		
 		# print("self.image_frame_id:",self.image_frame_id)
 		# print("self.cam_out_num:",self.cam_out_num)
 	def Image1_callback(self, data):
@@ -133,12 +133,12 @@ class cal_class:
 		if self.image_cnt == 0:
 			self.pub_image.publish(self.image1)
 			
-			# if self.image_frame_id == "cam1":
+			if self.image_frame_id == "cam1":
 			# 	# self.cam_out_num = 2 #Because the image is too large, the camera is digitally shifted
-			# 	self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
-			# 	self.task()
+				self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
+				self.task()
 				
-			self.image_cnt = 1
+				self.image_cnt = 1
 
 	def Image2_callback(self, data):
 		self.image2 = data
@@ -146,24 +146,24 @@ class cal_class:
 		if self.image_cnt == 1:
 			self.pub_image.publish(self.image2)
 			
-			# if self.image_frame_id == "cam2":
-			# 	# self.cam_out_num = 0 #Because the image is too large, the camera is digitally shifted
-			# 	self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
-			# 	self.task()
+			if self.image_frame_id == "cam2":
+				# self.cam_out_num = 0 #Because the image is too large, the camera is digitally shifted
+				self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
+				self.task()
 			
-			self.image_cnt = 2
+				self.image_cnt = 2
 
 	def Image3_callback(self, data):
 		self.image3 = data 
 		if self.image_cnt == 2:
 			self.pub_image.publish(self.image3)
 			
-			# if self.image_frame_id == "cam3":
-			# 	# self.cam_out_num = 1 #Because the image is too large, the camera is digitally shifted
-			# 	self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
-			# 	self.task()
+			if self.image_frame_id == "cam3":
+				# self.cam_out_num = 1 #Because the image is too large, the camera is digitally shifted
+				self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
+				self.task()
 				
-			self.image_cnt = 0
+				self.image_cnt = 0
 	def mission(self):
 		self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
 		self.task()
@@ -476,7 +476,7 @@ if __name__ == '__main__':
 	cal.tranform_cal()
 	try:
 		while not rospy.is_shutdown():
-			cal.mission()
+			# cal.mission()
 			rate.sleep()
 	except KeyboardInterrupt:
 		alert.join()

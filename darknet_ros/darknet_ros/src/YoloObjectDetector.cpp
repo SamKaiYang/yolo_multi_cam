@@ -382,6 +382,7 @@ void *YoloObjectDetector::detectInThread()
     printf("\033[2J");
     printf("\033[1;1H");
     printf("\nFPS:%.1f\n",fps_);
+    std::cout<<"Header:\n"<<imageHeader_.frame_id;
     printf("Objects:\n\n");
   }
   image display = buff_[(buffIndex_+2) % 3];
@@ -644,6 +645,7 @@ void *YoloObjectDetector::publishInThread()
     msg.count = num;
     objectPublisher_.publish(msg);
 
+    bool person_flag = False;
     for (int i = 0; i < numClasses_; i++) {
       if (rosBoxCounter_[i] > 0) {
         darknet_ros_msgs::BoundingBox boundingBox;
@@ -661,16 +663,25 @@ void *YoloObjectDetector::publishInThread()
           boundingBox.ymin = ymin;
           boundingBox.xmax = xmax;
           boundingBox.ymax = ymax;
-          boundingBoxesResults_.bounding_boxes.push_back(boundingBox);
+          //new detection person
+          if(boundingBox.Class=="person")
+          {
+              boundingBoxesResults_.bounding_boxes.push_back(boundingBox);
+              person_flag = True;
+          }
         }
       }
     }
-    boundingBoxesResults_.header.stamp = ros::Time::now();
-    boundingBoxesResults_.header.frame_id = "detection";
-    boundingBoxesResults_.image_header = headerBuff_[(buffIndex_ + 1) % 3];
-    boundingBoxesResults_.cam_out = cam_number; //cam_out
-    boundingBoxesResults_.frame_id = imageHeader_.frame_id; //image->frame_id
-    boundingBoxesPublisher_.publish(boundingBoxesResults_);
+    if(person_flag==True)
+    {
+      boundingBoxesResults_.header.stamp = ros::Time::now();
+      boundingBoxesResults_.header.frame_id = "detection";
+      boundingBoxesResults_.image_header = headerBuff_[(buffIndex_ + 1) % 3];
+      boundingBoxesResults_.cam_out = cam_number; //cam_out
+      boundingBoxesResults_.frame_id = imageHeader_.frame_id; //image->frame_id
+      std::cout<<"Header:\n"<<imageHeader_.frame_id;
+      boundingBoxesPublisher_.publish(boundingBoxesResults_);
+    }
   } else {
     darknet_ros_msgs::ObjectCount msg;
     msg.header.stamp = ros::Time::now();
@@ -680,6 +691,7 @@ void *YoloObjectDetector::publishInThread()
     
     boundingBoxesResults_.header.frame_id = "No detection";
     boundingBoxesResults_.cam_out = cam_number; //cam_out
+    boundingBoxesResults_.frame_id = imageHeader_.frame_id; //image->frame_id
     boundingBoxesPublisher_.publish(boundingBoxesResults_);
   }
   if (isCheckingForObjects()) {

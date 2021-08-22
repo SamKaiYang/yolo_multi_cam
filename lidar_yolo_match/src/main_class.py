@@ -134,9 +134,8 @@ class cal_class:
 			self.pub_image.publish(self.image1)
 			
 			if self.image_frame_id == "cam1":
-			# 	# self.cam_out_num = 2 #Because the image is too large, the camera is digitally shifted
-				self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
-				self.task()
+				# self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
+				# self.task()
 				
 				self.image_cnt = 1
 
@@ -147,10 +146,9 @@ class cal_class:
 			self.pub_image.publish(self.image2)
 			
 			if self.image_frame_id == "cam2":
-				# self.cam_out_num = 0 #Because the image is too large, the camera is digitally shifted
-				self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
-				self.task()
-			
+				# self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
+				# self.task()
+
 				self.image_cnt = 2
 
 	def Image3_callback(self, data):
@@ -159,9 +157,8 @@ class cal_class:
 			self.pub_image.publish(self.image3)
 			
 			if self.image_frame_id == "cam3":
-				# self.cam_out_num = 1 #Because the image is too large, the camera is digitally shifted
-				self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
-				self.task()
+				# self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
+				# self.task()
 				
 				self.image_cnt = 0
 	def mission(self):
@@ -179,10 +176,11 @@ class cal_class:
 			for i in range(len(bounding_boxes)):
 				if bounding_boxes[i].Class == "person":
 					self.cam_num = cam
-					print("cam:",cam)
+					# print("cam:",cam)
 					self.bounding = bounding_boxes
 					self.bounding_num = i
 					self.person_flag = True 
+					self.task()
 			if self.person_flag == True:
 				self.person_flag = False
 				return True
@@ -238,58 +236,61 @@ class cal_class:
 
 
 	def task(self):
-		if self.cam_change_flag == True:
-			self.cam_change_flag = False
-			if self.bounding == None:
-				pass
-			else:
-				print("cam_out_num",self.cam_num)
-				xmin = self.bounding[self.bounding_num].xmin
-				ymin = self.bounding[self.bounding_num].ymin
-				xmax = self.bounding[self.bounding_num].xmax
-				ymax = self.bounding[self.bounding_num].ymax
-				# # Center of box
-				xcenter = (xmin+xmax)/2.0
-				ycenter = (ymin+ymax)/2.0
+		# if self.cam_change_flag == True:
+		# 	self.cam_change_flag = False
+		if self.bounding == None:
+			pass
+		else:
+			print("cam_out_num",self.cam_num)
+			xmin = self.bounding[self.bounding_num].xmin
+			ymin = self.bounding[self.bounding_num].ymin
+			xmax = self.bounding[self.bounding_num].xmax
+			ymax = self.bounding[self.bounding_num].ymax
+			# # Center of box
+			xcenter = (xmin+xmax)/2.0
+			ycenter = (ymin+ymax)/2.0
 
-				pcl = get_cam_pointcloud(self.soc,self.cam_num)
-				X= pcl[:,0]
-				Y= pcl[:,1]
-				Z= pcl[:,2]
-				distance = pcl[:,3]
-				# make A matrix (x y z)
-				size= len(X)
+			pcl = get_cam_pointcloud(self.soc,self.cam_num)
+			X= pcl[:,0]
+			Y= pcl[:,1]
+			Z= pcl[:,2]
+			distance = pcl[:,3]
+			# make A matrix (x y z)
+			size= len(X)
 
-				X1= np.matrix.transpose(X)
-				Y1= np.matrix.transpose(Y)
-				Z1= np.matrix.transpose(Z)
-				W= np.ones(size)
-				W1= np.matrix.transpose(W)
-				A=[X1,Y1,Z1]
-				pcl_matrix= np.matrix([X1,Y1,Z1,W1])
-			#----------------0818
-				# Convert to vlp16 ros coordinate system output
-				A=[X1,Y1,Z1,W1]
-				real_vlp_to_ros = np.matrix([[0,-1,0,0],[1,0,0,0],[0,0,1,0],[0,0,0,1]])
-				pcl_matrix = np.matmul((real_vlp_to_ros),(A))
-				#-------------
-				cv_points = self.lidar_cam_fusion(self.cam_num,pcl_matrix)
-				B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
-				# Get index of lidar point for detected object
-				index0 = int(np.argmin(B, axis=1))
-				print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
-				if self.cam_num == 0:
-					self.alert_calss.person_distance = distance[index0]
-					self.alert_calss.alert_level_cal()
-				elif self.cam_num == 1:
-					self.alert_calss_1.person_distance = distance[index0]
-					self.alert_calss_1.alert_level_cal()
-				elif self.cam_num == 2:
-					self.alert_calss_2.person_distance = distance[index0]
-					self.alert_calss_2.alert_level_cal()
-				# self.alert_calss.alert_response = self.alert_calss.alert_client_to_timda_server(self.alert_calss.Depth_level)
-			self.bounding = None							
-			print(' ')
+			X1= np.matrix.transpose(X)
+			Y1= np.matrix.transpose(Y)
+			Z1= np.matrix.transpose(Z)
+			W= np.ones(size)
+			W1= np.matrix.transpose(W)
+			A=[X1,Y1,Z1]
+			pcl_matrix= np.matrix([X1,Y1,Z1,W1])
+		#----------------0818
+			# Convert to vlp16 ros coordinate system output
+			A=[X1,Y1,Z1,W1]
+			real_vlp_to_ros = np.matrix([[0,-1,0,0],[1,0,0,0],[0,0,1,0],[0,0,0,1]])
+			pcl_matrix = np.matmul((real_vlp_to_ros),(A))
+			#-------------
+			cv_points = self.lidar_cam_fusion(self.cam_num,pcl_matrix)
+			B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
+			# Get index of lidar point for detected object
+			index0 = int(np.argmin(B, axis=1))
+			print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
+			if self.cam_num == 0:
+				self.alert_calss.person_distance = distance[index0]
+				self.alert_calss.shy_away_position = "move_right"
+				self.alert_calss.alert_level_cal()
+			elif self.cam_num == 1:
+				self.alert_calss_1.person_distance = distance[index0]
+				self.alert_calss_1.shy_away_position = "move_left"
+				self.alert_calss_1.alert_level_cal()
+			elif self.cam_num == 2:
+				self.alert_calss_2.person_distance = distance[index0]
+				self.alert_calss_2.shy_away_position = "move_right"
+				self.alert_calss_2.alert_level_cal()
+			# self.alert_calss.alert_response = self.alert_calss.alert_client_to_timda_server(self.alert_calss.Depth_level)
+		self.bounding = None							
+		print(' ')
 
 class Alert(threading.Thread):
 	def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
@@ -297,6 +298,7 @@ class Alert(threading.Thread):
 		super(Alert, self).__init__(group=group, target=self.thread_time_cal,name=name, args=args, kwargs=kwargs,verbose=verbose)
 		self.args = args
 		self.person_distance = 3
+		self.shy_away_position = None
 		self.alert_flag = None
 		self.alert_response = None
 
@@ -317,12 +319,12 @@ class Alert(threading.Thread):
 	def alert_level_cal(self):
 		# print("Distance: %d mm"%self.person_distance)
 		if self.person_distance < 1 and self.alert_flag == False:
-			self.Depth_level = "level_1"
+			self.Depth_level.level = "level_1"
 		elif self.person_distance < 1 and self.alert_flag == True:
-			self.Depth_level = "level_2"
+			self.Depth_level.level = "level_2"
 		else :
-			self.Depth_level = "level_0"
-
+			self.Depth_level.level = "level_0"
+		self.Depth_level.shy_away_position = self.shy_away_position
 		self.pub_alert.publish(self.Depth_level)
 		print("Depth_level:",self.Depth_level)
 
@@ -351,6 +353,7 @@ class Alert_1(threading.Thread):
 		super(Alert_1, self).__init__(group=group, target=self.thread_time_cal,name=name, args=args, kwargs=kwargs,verbose=verbose)
 		self.args = args
 		self.person_distance = 3
+		self.shy_away_position = None
 		self.alert_flag = None
 		self.alert_response = None
 
@@ -371,12 +374,12 @@ class Alert_1(threading.Thread):
 	def alert_level_cal(self):
 		# print("Distance: %d mm"%self.person_distance)
 		if self.person_distance < 1 and self.alert_flag == False:
-			self.Depth_level = "level_1"
+			self.Depth_level.level = "level_1"
 		elif self.person_distance < 1 and self.alert_flag == True:
-			self.Depth_level = "level_2"
+			self.Depth_level.level = "level_2"
 		else :
-			self.Depth_level = "level_0"
-
+			self.Depth_level.level = "level_0"
+		self.Depth_level.shy_away_position = self.shy_away_position
 		self.pub_alert.publish(self.Depth_level)
 		print("Depth_level:",self.Depth_level)
 
@@ -405,6 +408,7 @@ class Alert_2(threading.Thread):
 		super(Alert_2, self).__init__(group=group, target=self.thread_time_cal,name=name, args=args, kwargs=kwargs,verbose=verbose)
 		self.args = args
 		self.person_distance = 3
+		self.shy_away_position = None
 		self.alert_flag = None
 		self.alert_response = None
 
@@ -425,12 +429,12 @@ class Alert_2(threading.Thread):
 	def alert_level_cal(self):
 		# print("Distance: %d mm"%self.person_distance)
 		if self.person_distance < 1 and self.alert_flag == False:
-			self.Depth_level = "level_1"
+			self.Depth_level.level = "level_1"
 		elif self.person_distance < 1 and self.alert_flag == True:
-			self.Depth_level = "level_2"
+			self.Depth_level.level = "level_2"
 		else :
-			self.Depth_level = "level_0"
-
+			self.Depth_level.level = "level_0"
+		self.pub_alert.publish(self.Depth_level)
 		self.pub_alert.publish(self.Depth_level)
 		print("Depth_level:",self.Depth_level)
 
@@ -476,7 +480,7 @@ if __name__ == '__main__':
 	cal.tranform_cal()
 	try:
 		while not rospy.is_shutdown():
-			# cal.mission()
+			cal.mission()
 			rate.sleep()
 	except KeyboardInterrupt:
 		alert.join()

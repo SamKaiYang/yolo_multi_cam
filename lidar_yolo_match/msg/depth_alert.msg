@@ -1,1 +1,2 @@
 string level
+string shy_away_position

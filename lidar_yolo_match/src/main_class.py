@@ -19,26 +19,17 @@ from velodyne_capture_multicam import init_velo_socket, get_pointcloud, get_cam_
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.patches import Circle
 from collisionNew import Human, collision_detection
-# yolo_detection
-from yolo_detection.msg import ROI_array
-from yolo_detection.msg import ROI
-from yolo_detection.msg import cam_output
-# from yolo_detection.msg import depth_alert
 
 from darknet_ros_msgs.msg import BoundingBox
 from darknet_ros_msgs.msg import BoundingBoxes
 from darknet_ros_msgs.msg import ObjectCount
-
-from std_msgs.msg import String
-from std_msgs.msg import Int32MultiArray
 
 from sensor_msgs.msg import Image 
 # Sub-execution work function
 import threading
 
 from lidar_yolo_match.msg import depth_alert
-from lidar_yolo_match.srv import alert_output, alert_outputResponse
-from lidar_yolo_match.srv import TimdaMode, TimdaModeResponse
+# from lidar_yolo_match.srv import alert_output, alert_outputResponse
 
 class cal_class:
 	def __init__(self, alert_calss,alert_calss_1,alert_calss_2):
@@ -75,7 +66,6 @@ class cal_class:
 		self.sub_Image1 = rospy.Subscriber("/camera1/usb_cam1/image_raw",Image,self.Image1_callback)
 		self.sub_Image2 = rospy.Subscriber("/camera2/usb_cam2/image_raw",Image,self.Image2_callback)
 		self.sub_Image3 = rospy.Subscriber("/camera3/usb_cam3/image_raw",Image,self.Image3_callback)
-		self.pub_cam_num  =  rospy.Publisher("/cam_num", cam_output, queue_size=10)
 		self.pub_image = rospy.Publisher("/usb_cam/image_raw", Image, queue_size=None)
 		
 	def vlp16_socket(self):
@@ -126,17 +116,12 @@ class cal_class:
 		self.cam_out_num = data.cam_out
 		self.image_frame_id = data.frame_id
 		
-		# print("self.image_frame_id:",self.image_frame_id)
-		# print("self.cam_out_num:",self.cam_out_num)
 	def Image1_callback(self, data):
 		self.image1 = data 
 		if self.image_cnt == 0:
 			self.pub_image.publish(self.image1)
 			
 			if self.image_frame_id == "cam1":
-				# self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
-				# self.task()
-				
 				self.image_cnt = 1
 
 	def Image2_callback(self, data):
@@ -146,9 +131,6 @@ class cal_class:
 			self.pub_image.publish(self.image2)
 			
 			if self.image_frame_id == "cam2":
-				# self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
-				# self.task()
-
 				self.image_cnt = 2
 
 	def Image3_callback(self, data):
@@ -157,14 +139,9 @@ class cal_class:
 			self.pub_image.publish(self.image3)
 			
 			if self.image_frame_id == "cam3":
-				# self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
-				# self.task()
-				
 				self.image_cnt = 0
 	def mission(self):
-		# self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
 		self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
-		# self.task()
 
 	def cam_boundingboxes(self, cam, bounding_boxes):
 		if cam == "cam1":
@@ -182,46 +159,11 @@ class cal_class:
 					self.bounding_num = i
 					self.person_flag = True 
 					self.task()
-			# if self.person_flag == True:
-			# 	self.person_flag = False
-			# 	return True
-			# else:
-			# 	return False
 		else:
 			self.bounding = None
 			self.boundingboxes = None # 0821 test
-			# return False
-	# def lidar_cam_fusion(self,cam_num,pcl_matrix,xcenter,ycenter,distance):
-	# 	if cam_num == 0:
-	# 		F = np.matmul((self.h),(pcl_matrix))
-	# 		cv_points = np.matmul((self.camera_matrix),(F))/F[2,:]
 
-	# 		B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
-	# 		# Get index of lidar point for detected object
-	# 		index0 = int(np.argmin(B, axis=1))
-	# 		print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
-	# 		self.alert_calss.person_distance = distance[index0]
-	# 		self.alert_calss.alert_level_cal()
-	# 	elif cam_num == 1:
-	# 		F = np.matmul((self.h_2),(pcl_matrix))
-	# 		cv_points = np.matmul((self.camera_matrix_2),(F))/F[2,:]
 
-	# 		B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
-	# 		# Get index of lidar point for detected object
-	# 		index0 = int(np.argmin(B, axis=1))
-	# 		print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
-	# 		self.alert_calss.person_distance = distance[index0]
-	# 		self.alert_calss.alert_level_cal()
-	# 	elif cam_num == 2:
-	# 		F = np.matmul((self.h_3),(pcl_matrix))
-	# 		cv_points = np.matmul((self.camera_matrix_3),(F))/F[2,:]
-
-	# 		B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
-	# 		# Get index of lidar point for detected object
-	# 		index0 = int(np.argmin(B, axis=1))
-	# 		print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
-	# 		self.alert_calss.person_distance = distance[index0]
-	# 		self.alert_calss.alert_level_cal()
 	def lidar_cam_fusion(self,cam_num,pcl_point):
 		if cam_num == 0:
 			F = np.matmul((self.h),(pcl_point))
@@ -237,8 +179,6 @@ class cal_class:
 
 
 	def task(self):
-		# if self.cam_change_flag == True:
-		# 	self.cam_change_flag = False
 		if self.bounding == None:
 			pass
 		else:
@@ -277,24 +217,20 @@ class cal_class:
 			# Get index of lidar point for detected object
 			index0 = int(np.argmin(B, axis=1))
 			print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
-			if self.cam_num == 0:
-				self.alert_calss.person_distance = distance[index0]
-				self.alert_calss.shy_away_position = "move_right"
-				self.alert_calss.alert_level_cal()
-			elif self.cam_num == 1:
-				self.alert_calss_1.person_distance = distance[index0]
-				self.alert_calss_1.shy_away_position = "move_left"
-				self.alert_calss_1.alert_level_cal()
-			elif self.cam_num == 2:
-				self.alert_calss_2.person_distance = distance[index0]
-				self.alert_calss_2.shy_away_position = "move_right"
-				self.alert_calss_2.alert_level_cal()
+			if distance[index0]<3:
+				if self.cam_num == 0:
+					self.alert_calss.person_distance = distance[index0]
+					self.alert_calss.shy_away_position = "move_right"
+					self.alert_calss.alert_level_cal()
+				elif self.cam_num == 1:
+					self.alert_calss_1.person_distance = distance[index0]
+					self.alert_calss_1.shy_away_position = "move_left"
+					self.alert_calss_1.alert_level_cal()
+				elif self.cam_num == 2:
+					self.alert_calss_2.person_distance = distance[index0]
+					self.alert_calss_2.shy_away_position = "move_right"
+					self.alert_calss_2.alert_level_cal()
 
-			# if self.alert_calss.person_distance 
-			# self.alert_calss.alert_response = self.alert_calss.alert_client_to_timda_server(self.alert_calss.Depth_level)
-		# test 0822
-		# self.alert_calss.person_distance = 3
-		# self.alert_calss.alert_level_cal()
 		self.bounding = None							
 		print(' ')
 # main Alert 
@@ -310,21 +246,6 @@ class Alert(threading.Thread):
 
 		self.Depth_level = depth_alert()
 		self.pub_alert = rospy.Publisher("alert_level", depth_alert, queue_size=10)
-		# test 
-	# 	self.alert = rospy.Subscriber("alert_level",depth_alert,self.depth_alert_callback)
-	# 	self.level_test = None
-	# # example  client  Person detection warning request
-	# def depth_alert_callback(self, data):
-	# 	self.level_test = data.level
-	def alert_client_to_timda_server(self, req):
-		rospy.wait_for_service('TIMDA_SERVER')
-		print("stay alert input")
-		try:
-			alert = rospy.ServiceProxy('TIMDA_SERVER', TimdaMode)
-			alert_resp = alert(req)
-			return alert_resp
-		except rospy.ServiceException as e:
-			print("Service call failed: %s"%e)
 
 	def alert_level_cal(self):
 		# print("Distance: %d mm"%self.person_distance)
@@ -349,13 +270,9 @@ class Alert(threading.Thread):
 					time.sleep(1)
 				elif self.person_distance < 1 and count == 3:
 					self.alert_flag = True
-					# leaves_flag = False
 				elif self.person_distance >= 1:
 					count = 0
 					self.alert_flag = False
-				# test !!
-				# print('thread_time_cal')
-				# time.sleep(2)
 			except:
 				print("Other abnormalities in the program")
 
@@ -371,17 +288,6 @@ class Alert_1(threading.Thread):
 
 		self.Depth_level = depth_alert()
 		self.pub_alert = rospy.Publisher("alert_level", depth_alert, queue_size=10)
-	
-	# example  client  Person detection warning request
-	def alert_client_to_timda_server(self, req):
-		rospy.wait_for_service('TIMDA_SERVER')
-		print("stay alert input")
-		try:
-			alert = rospy.ServiceProxy('TIMDA_SERVER', TimdaMode)
-			alert_resp = alert(req)
-			return alert_resp
-		except rospy.ServiceException as e:
-			print("Service call failed: %s"%e)
 
 	def alert_level_cal(self):
 		# print("Distance: %d mm"%self.person_distance)
@@ -408,9 +314,7 @@ class Alert_1(threading.Thread):
 				elif self.person_distance >= 1:
 					count = 0
 					self.alert_flag = False
-				# test !!
-				# print('thread_time_cal')
-				# time.sleep(2)
+
 			except:
 				print("Other abnormalities in the program")
 
@@ -426,17 +330,6 @@ class Alert_2(threading.Thread):
 
 		self.Depth_level = depth_alert()
 		self.pub_alert = rospy.Publisher("alert_level", depth_alert, queue_size=10)
-	
-	# example  client  Person detection warning request
-	def alert_client_to_timda_server(self, req):
-		rospy.wait_for_service('TIMDA_SERVER')
-		print("stay alert input")
-		try:
-			alert = rospy.ServiceProxy('TIMDA_SERVER', TimdaMode)
-			alert_resp = alert(req)
-			return alert_resp
-		except rospy.ServiceException as e:
-			print("Service call failed: %s"%e)
 
 	def alert_level_cal(self):
 		# print("Distance: %d mm"%self.person_distance)
@@ -463,9 +356,7 @@ class Alert_2(threading.Thread):
 				elif self.person_distance >= 1:
 					count = 0
 					self.alert_flag = False
-				# test !!
-				# print('thread_time_cal')
-				# time.sleep(2)
+
 			except:
 				print("Other abnormalities in the program")
 
@@ -486,7 +377,6 @@ if __name__ == '__main__':
 	alert_2.daemon = True
 	alert_2.start()
 
-	# cal = cal_class(alert)
 	cal = cal_class(alert,alert_1,alert_2)
 	cal.vlp16_socket()
 	cal.tranform_cal()

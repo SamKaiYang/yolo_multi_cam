@@ -681,7 +681,22 @@ void *YoloObjectDetector::publishInThread()
       boundingBoxesResults_.frame_id = headerBuff_[(buffIndex_ + 1) % 3].frame_id; //image->frame_id
       std::cout<<"Header:\n"<<imageHeader_.frame_id;
       boundingBoxesPublisher_.publish(boundingBoxesResults_);
+    }else
+    {
+      darknet_ros_msgs::ObjectCount msg;
+      msg.header.stamp = ros::Time::now();
+      msg.header.frame_id = "detection";
+      msg.count = 0;
+      objectPublisher_.publish(msg);
+      
+      boundingBoxesResults_.header.frame_id = "No detection";
+      boundingBoxesResults_.cam_out = cam_number; //cam_out
+      boundingBoxesResults_.frame_id = headerBuff_[(buffIndex_ + 1) % 3].frame_id; //image->frame_id
+      // boundingBoxesResults_.frame_id = imageHeader_.frame_id; //image->frame_id
+      boundingBoxesResults_.bounding_boxes.clear();
+      boundingBoxesPublisher_.publish(boundingBoxesResults_);
     }
+
   } else {
     darknet_ros_msgs::ObjectCount msg;
     msg.header.stamp = ros::Time::now();

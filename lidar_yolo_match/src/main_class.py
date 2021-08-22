@@ -164,7 +164,7 @@ class cal_class:
 	def mission(self):
 		# self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
 		self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
-		self.task()
+		# self.task()
 
 	def cam_boundingboxes(self, cam, bounding_boxes):
 		if cam == "cam1":
@@ -181,7 +181,7 @@ class cal_class:
 					self.bounding = bounding_boxes
 					self.bounding_num = i
 					self.person_flag = True 
-					# self.task()
+					self.task()
 			# if self.person_flag == True:
 			# 	self.person_flag = False
 			# 	return True
@@ -191,37 +191,37 @@ class cal_class:
 			self.bounding = None
 			self.boundingboxes = None # 0821 test
 			# return False
-	def lidar_cam_fusion(self,cam_num,pcl_matrix,xcenter,ycenter,distance):
-		if cam_num == 0:
-			F = np.matmul((self.h),(pcl_matrix))
-			cv_points = np.matmul((self.camera_matrix),(F))/F[2,:]
+	# def lidar_cam_fusion(self,cam_num,pcl_matrix,xcenter,ycenter,distance):
+	# 	if cam_num == 0:
+	# 		F = np.matmul((self.h),(pcl_matrix))
+	# 		cv_points = np.matmul((self.camera_matrix),(F))/F[2,:]
 
-			B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
-			# Get index of lidar point for detected object
-			index0 = int(np.argmin(B, axis=1))
-			print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
-			self.alert_calss.person_distance = distance[index0]
-			self.alert_calss.alert_level_cal()
-		elif cam_num == 1:
-			F = np.matmul((self.h_2),(pcl_matrix))
-			cv_points = np.matmul((self.camera_matrix_2),(F))/F[2,:]
+	# 		B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
+	# 		# Get index of lidar point for detected object
+	# 		index0 = int(np.argmin(B, axis=1))
+	# 		print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
+	# 		self.alert_calss.person_distance = distance[index0]
+	# 		self.alert_calss.alert_level_cal()
+	# 	elif cam_num == 1:
+	# 		F = np.matmul((self.h_2),(pcl_matrix))
+	# 		cv_points = np.matmul((self.camera_matrix_2),(F))/F[2,:]
 
-			B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
-			# Get index of lidar point for detected object
-			index0 = int(np.argmin(B, axis=1))
-			print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
-			self.alert_calss.person_distance = distance[index0]
-			self.alert_calss.alert_level_cal()
-		elif cam_num == 2:
-			F = np.matmul((self.h_3),(pcl_matrix))
-			cv_points = np.matmul((self.camera_matrix_3),(F))/F[2,:]
+	# 		B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
+	# 		# Get index of lidar point for detected object
+	# 		index0 = int(np.argmin(B, axis=1))
+	# 		print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
+	# 		self.alert_calss.person_distance = distance[index0]
+	# 		self.alert_calss.alert_level_cal()
+	# 	elif cam_num == 2:
+	# 		F = np.matmul((self.h_3),(pcl_matrix))
+	# 		cv_points = np.matmul((self.camera_matrix_3),(F))/F[2,:]
 
-			B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
-			# Get index of lidar point for detected object
-			index0 = int(np.argmin(B, axis=1))
-			print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
-			self.alert_calss.person_distance = distance[index0]
-			self.alert_calss.alert_level_cal()
+	# 		B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
+	# 		# Get index of lidar point for detected object
+	# 		index0 = int(np.argmin(B, axis=1))
+	# 		print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
+	# 		self.alert_calss.person_distance = distance[index0]
+	# 		self.alert_calss.alert_level_cal()
 	def lidar_cam_fusion(self,cam_num,pcl_point):
 		if cam_num == 0:
 			F = np.matmul((self.h),(pcl_point))

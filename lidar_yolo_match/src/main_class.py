@@ -24,6 +24,7 @@ from darknet_ros_msgs.msg import BoundingBox
 from darknet_ros_msgs.msg import BoundingBoxes
 from darknet_ros_msgs.msg import ObjectCount
 
+from std_msgs.msg import Int32
 from sensor_msgs.msg import Image 
 # Sub-execution work function
 import threading
@@ -243,20 +244,24 @@ class Alert(threading.Thread):
 		self.shy_away_position = None
 		self.alert_flag = None
 		self.alert_response = None
-
+		self.arduino_alert = 0
 		self.Depth_level = depth_alert()
 		self.pub_alert = rospy.Publisher("alert_level", depth_alert, queue_size=10)
-
+		self.pub_arduino_alert = rospy.Publisher("AlertControl_ros", Int32, queue_size=10)
 	def alert_level_cal(self):
 		# print("Distance: %d mm"%self.person_distance)
 		if self.person_distance < 1 and self.alert_flag == False:
 			self.Depth_level.level = "level_1"
+			self.arduino_alert = 1
 		elif self.person_distance < 1 and self.alert_flag == True:
 			self.Depth_level.level = "level_2"
+			self.arduino_alert = 1
 		else :
 			self.Depth_level.level = "level_0"
+			self.arduino_alert = 0
 		self.Depth_level.shy_away_position = self.shy_away_position
 		self.pub_alert.publish(self.Depth_level)
+		self.pub_arduino_alert.publish(self.arduino_alert)
 		print("Depth_level:",self.Depth_level)
 	#TODO:If the person leaves the correspondence number
 	def thread_time_cal(self):
@@ -288,17 +293,21 @@ class Alert_1(threading.Thread):
 
 		self.Depth_level = depth_alert()
 		self.pub_alert = rospy.Publisher("alert_level", depth_alert, queue_size=10)
-
+		self.pub_arduino_alert = rospy.Publisher("AlertControl_ros", Int32, queue_size=10)
 	def alert_level_cal(self):
 		# print("Distance: %d mm"%self.person_distance)
 		if self.person_distance < 1 and self.alert_flag == False:
 			self.Depth_level.level = "level_1"
+			self.arduino_alert = 1
 		elif self.person_distance < 1 and self.alert_flag == True:
 			self.Depth_level.level = "level_2"
+			self.arduino_alert = 1
 		else :
 			self.Depth_level.level = "level_0"
+			self.arduino_alert = 0
 		self.Depth_level.shy_away_position = self.shy_away_position
 		self.pub_alert.publish(self.Depth_level)
+		self.pub_arduino_alert.publish(self.arduino_alert)
 		print("Depth_level:",self.Depth_level)
 
 	def thread_time_cal(self):
@@ -330,17 +339,21 @@ class Alert_2(threading.Thread):
 
 		self.Depth_level = depth_alert()
 		self.pub_alert = rospy.Publisher("alert_level", depth_alert, queue_size=10)
-
+		self.pub_arduino_alert = rospy.Publisher("AlertControl_ros", Int32, queue_size=10)
 	def alert_level_cal(self):
 		# print("Distance: %d mm"%self.person_distance)
 		if self.person_distance < 1 and self.alert_flag == False:
 			self.Depth_level.level = "level_1"
+			self.arduino_alert = 1
 		elif self.person_distance < 1 and self.alert_flag == True:
 			self.Depth_level.level = "level_2"
+			self.arduino_alert = 1
 		else :
 			self.Depth_level.level = "level_0"
+			self.arduino_alert = 0
 		self.Depth_level.shy_away_position = self.shy_away_position
 		self.pub_alert.publish(self.Depth_level)
+		self.pub_arduino_alert.publish(self.arduino_alert)
 		print("Depth_level:",self.Depth_level)
 
 	def thread_time_cal(self):

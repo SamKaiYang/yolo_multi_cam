@@ -162,7 +162,8 @@ class cal_class:
 				
 				self.image_cnt = 0
 	def mission(self):
-		self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
+		# self.cam_change_flag = self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
+		self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
 		self.task()
 
 	def cam_boundingboxes(self, cam, bounding_boxes):
@@ -180,16 +181,16 @@ class cal_class:
 					self.bounding = bounding_boxes
 					self.bounding_num = i
 					self.person_flag = True 
-					self.task()
-			if self.person_flag == True:
-				self.person_flag = False
-				return True
-			else:
-				return False
+					# self.task()
+			# if self.person_flag == True:
+			# 	self.person_flag = False
+			# 	return True
+			# else:
+			# 	return False
 		else:
 			self.bounding = None
 			self.boundingboxes = None # 0821 test
-			return False
+			# return False
 	def lidar_cam_fusion(self,cam_num,pcl_matrix,xcenter,ycenter,distance):
 		if cam_num == 0:
 			F = np.matmul((self.h),(pcl_matrix))
@@ -288,10 +289,15 @@ class cal_class:
 				self.alert_calss_2.person_distance = distance[index0]
 				self.alert_calss_2.shy_away_position = "move_right"
 				self.alert_calss_2.alert_level_cal()
+
+			# if self.alert_calss.person_distance 
 			# self.alert_calss.alert_response = self.alert_calss.alert_client_to_timda_server(self.alert_calss.Depth_level)
+		# test 0822
+		# self.alert_calss.person_distance = 3
+		# self.alert_calss.alert_level_cal()
 		self.bounding = None							
 		print(' ')
-
+# main Alert 
 class Alert(threading.Thread):
 	def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
 		# Call the Thread class's init function
@@ -304,8 +310,12 @@ class Alert(threading.Thread):
 
 		self.Depth_level = depth_alert()
 		self.pub_alert = rospy.Publisher("alert_level", depth_alert, queue_size=10)
-	
-	# example  client  Person detection warning request
+		# test 
+	# 	self.alert = rospy.Subscriber("alert_level",depth_alert,self.depth_alert_callback)
+	# 	self.level_test = None
+	# # example  client  Person detection warning request
+	# def depth_alert_callback(self, data):
+	# 	self.level_test = data.level
 	def alert_client_to_timda_server(self, req):
 		rospy.wait_for_service('TIMDA_SERVER')
 		print("stay alert input")
@@ -327,17 +337,19 @@ class Alert(threading.Thread):
 		self.Depth_level.shy_away_position = self.shy_away_position
 		self.pub_alert.publish(self.Depth_level)
 		print("Depth_level:",self.Depth_level)
-
+	#TODO:If the person leaves the correspondence number
 	def thread_time_cal(self):
 		count = 0
 		while True: 
 			try:
+				# print("self.level_test:",self.level_test)
 				if self.person_distance < 1 and count < 3:
 					count += 1
 					self.alert_flag = False
 					time.sleep(1)
 				elif self.person_distance < 1 and count == 3:
 					self.alert_flag = True
+					# leaves_flag = False
 				elif self.person_distance >= 1:
 					count = 0
 					self.alert_flag = False
@@ -434,7 +446,7 @@ class Alert_2(threading.Thread):
 			self.Depth_level.level = "level_2"
 		else :
 			self.Depth_level.level = "level_0"
-		self.pub_alert.publish(self.Depth_level)
+		self.Depth_level.shy_away_position = self.shy_away_position
 		self.pub_alert.publish(self.Depth_level)
 		print("Depth_level:",self.Depth_level)
 

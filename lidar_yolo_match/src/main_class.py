@@ -214,7 +214,7 @@ class cal_class:
 			pcl_matrix = np.matmul((real_vlp_to_ros),(A))
 			#-------------
 			cv_points = self.lidar_cam_fusion(self.cam_num,pcl_matrix)
-			B = np.square((cv_points[0,:]-xcenter))+ np.square((cv_points[1,:]-ycenter))
+			B = np.square((cv_points[0,:]-xcenter))+ np.square(((720-cv_points[1,:])-ycenter))
 			# Get index of lidar point for detected object
 			index0 = int(np.argmin(B, axis=1))
 			print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))

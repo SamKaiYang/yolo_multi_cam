@@ -109,41 +109,42 @@ class cal_class:
 		t_3=np.array([[h_test_3[0,3] ],[h_test_3[1,3]],[h_test_3[2,3]]])  
 		self.h_3=np.hstack((rotation_inv_3.T,t_3)) # stacked [R | t] 3*4 matrix
 
+	# yolo detection object number count 
 	def YoloCount_callback(self, data):
 		self.data_count = data.count
-
+	# yolo detection object information 
 	def Yolo_callback(self, data):
 		self.boundingboxes = data.bounding_boxes
 		self.cam_out_num = data.cam_out
 		self.image_frame_id = data.frame_id
-		
+	# cam 1 information Subscriber
 	def Image1_callback(self, data):
 		self.image1 = data 
 		if self.image_cnt == 0:
 			self.pub_image.publish(self.image1)
-			
+			# check image information (from yolo detection result)
 			if self.image_frame_id == "cam1":
 				self.image_cnt = 1
-
+	# cam 2 information Subscriber
 	def Image2_callback(self, data):
 		self.image2 = data
 		# print(data.header)
 		if self.image_cnt == 1:
 			self.pub_image.publish(self.image2)
-			
+			# check image information (from yolo detection result)
 			if self.image_frame_id == "cam2":
 				self.image_cnt = 2
-
+	# cam 3 information Subscriber
 	def Image3_callback(self, data):
 		self.image3 = data 
 		if self.image_cnt == 2:
 			self.pub_image.publish(self.image3)
-			
+			# check image information (from yolo detection result)
 			if self.image_frame_id == "cam3":
 				self.image_cnt = 0
 	def mission(self):
 		self.cam_boundingboxes(self.image_frame_id, self.boundingboxes)
-
+	# input boundingboxes information & cam number
 	def cam_boundingboxes(self, cam, bounding_boxes):
 		if cam == "cam1":
 			cam = 0
@@ -164,7 +165,7 @@ class cal_class:
 			self.bounding = None
 			self.boundingboxes = None # 0821 test
 
-
+	# get lidar points data 
 	def lidar_cam_fusion(self,cam_num,pcl_point):
 		if cam_num == 0:
 			F = np.matmul((self.h),(pcl_point))
@@ -217,7 +218,9 @@ class cal_class:
 			B = np.square((cv_points[0,:]-xcenter))+ np.square(((720-cv_points[1,:])-ycenter))
 			# Get index of lidar point for detected object
 			index0 = int(np.argmin(B, axis=1))
+			# distance detect
 			print('x:{:.2f} y:{:.2f} distance: {:.2f}'.format(X[index0], Y[index0], distance[index0]))
+			# set distance range 
 			if distance[index0]<3:
 				if self.cam_num == 0:
 					self.alert_calss.person_distance = distance[index0]
@@ -261,6 +264,7 @@ class Alert(threading.Thread):
 			self.arduino_alert = 0
 		self.Depth_level.shy_away_position = self.shy_away_position
 		self.pub_alert.publish(self.Depth_level)
+		# sent alert message to arduino 
 		self.pub_arduino_alert.publish(self.arduino_alert)
 		print("Depth_level:",self.Depth_level)
 	#TODO:If the person leaves the correspondence number

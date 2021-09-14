@@ -1,0 +1,2 @@
+set(lidar_yolo_match_MESSAGE_FILES "msg/Image.msg;msg/depth_alert.msg")
+set(lidar_yolo_match_SERVICE_FILES "srv/alert_output.srv;srv/TimdaMode.srv")

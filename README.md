@@ -10,7 +10,23 @@
 ## How to used
 ### build
 ```
-cd 自己的workspace/src
+cd <catkin_workspace>/src
+#git clone https://github.com/leggedrobotics/darknet_ros # up to v3
+git clone https://github.com/tom13133/darknet_ros # up to v4
+cd darknet_ros/ && git submodule update --init --recursive
+cd ~/catkin_workspace
+# before build, check (-O3 -gencode arch=compute_<version>,code=sm_<version>) part in darknet_ros/darknet_ros/CMakeLists.txt if you use CUDA
+# ex) 75 for GTX1650 and RTX2060, 86 for RTX3080, 62 for Xavier 
+catkin_make
+
+#download weight
+cd <catkin_workspace>/src/darknet_ros/darknet_ros/yolo_network_config/weights
+# yolo v4
+wget https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights
+# yolo v4 tiny
+wget https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v4_pre/yolov4-tiny.weights
+
+
 git clone https://github.com/ros-drivers/velodyne.git
 git clone https://github.com/bosch-ros-pkg/usb_cam.git
 sudo apt-get install ros-melodic-image-view
